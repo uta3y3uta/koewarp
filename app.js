@@ -74,7 +74,8 @@ function initSettings(){
   }
 
   $('setupToggle').addEventListener('click',(e)=>{ e.preventDefault();
-    const g=$('setupGuide'); g.hidden=!g.hidden; });
+    const g=$('setupGuide'); g.hidden=false;
+    g.scrollIntoView({behavior:'smooth', block:'start'}); });
 
   // ---- GAS設置ガイド：フォルダID自動埋め込み＋コードコピー ----
   const folderUrl=$('folderUrl');
