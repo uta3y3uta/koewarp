@@ -59,9 +59,10 @@ body{
 .sg-steps b{color:var(--brand)}
 .sg-sub{font-size:11px;color:var(--sub);margin-top:3px}
 .sg-note{font-size:11px;color:var(--sub);margin-left:6px}
-.sg-ul{margin:5px 0 0;padding-left:16px;color:var(--sub);line-height:1.7}
-.sg-ul li{margin-bottom:2px}
-.sg-ul b{color:var(--ink)}
+@counter-style sg-circled{system:fixed;symbols:"①" "②" "③" "④" "⑤" "⑥" "⑦" "⑧" "⑨";suffix:" "}
+.sg-ol{margin:5px 0 0;padding-left:20px;color:var(--sub);line-height:1.7;list-style:sg-circled}
+.sg-ol li{margin-bottom:2px}
+.sg-ol b{color:var(--ink)}
 #folderUrl{width:100%;margin-top:6px;padding:9px 10px;font-size:13px;border:1.5px solid var(--line);
   border-radius:9px;outline:none;background:#fff;color:#111}
 #folderUrl:focus{border-color:var(--brand)}
