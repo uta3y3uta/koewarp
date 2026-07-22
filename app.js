@@ -228,8 +228,8 @@ function initRecorder(cfg){
 
   // ---- 音声向け設定（授業のグループ/ペア対話→Gemini/NotebookLM用）----
   const TARGET_SR=16000;    // 16kHz：音声認識に最適・軽量
-  const KBPS=48;            // 声ならこれで十分クリア
-  const SEGMENT_SEC=45*60;  // 45分ごとに自動分割（1ファイル約16MB）
+  const KBPS=32;            // 声ならこれで十分クリア・さらに軽量
+  const SEGMENT_SEC=90*60;  // 90分ごとに自動分割（1ファイル約21MB）
 
   let state='idle';         // idle | recording | processing
   let stream=null, audioCtx=null, srcNode=null, capNode=null;
