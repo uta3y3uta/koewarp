@@ -66,10 +66,10 @@ function initSettings(){
 
   function updateDriveStatus(){
     const v = driveUrl.value.trim();
-    const st = $('driveStatus');
-    if(!v){ st.textContent='未設定 — URLを貼り付けてください'; st.className='drive-status'; }
-    else if(/^https?:\/\//.test(v)){ st.textContent='✔ 記録先を設定しました'; st.className='drive-status ok'; }
-    else { st.textContent='⚠ URLの形式が正しくありません'; st.className='drive-status'; }
+    const dot = $('driveDot');
+    const ok = /^https?:\/\//.test(v);
+    dot.className = 'dot'+(ok?' ok':'');
+    dot.title = ok ? '記録先を設定しました' : '未設定';
   }
 
   $('setupToggle').addEventListener('click',(e)=>{ e.preventDefault();
@@ -84,8 +84,7 @@ function initSettings(){
 
   applyPreview(cfg);
 
-  // エフェクト試し
-  $('fxTest').addEventListener('click', ()=>{ runFxOnce($('fxLayer')); });
+  // プレビューのマイクを押すとエフェクトを再生
   $('previewMic').addEventListener('click', ()=>{ runFxOnce($('fxLayer')); });
 
   // 共有URL発行
@@ -103,7 +102,8 @@ function buildThemeRow(cfg){
   THEMES.forEach(t=>{
     const b=document.createElement('button');
     b.className='chip theme-chip'+(cfg.t===t.id?' sel':'');
-    b.innerHTML=`<div class="tswatch">${t.cols.map(c=>`<i style="background:${c}"></i>`).join('')}</div>${t.name}`;
+    b.title=t.name;
+    b.innerHTML=`<div class="tswatch">${t.cols.map(c=>`<i style="background:${c}"></i>`).join('')}</div>`;
     b.onclick=()=>{ cfg.t=t.id; sel(row,b); applyPreview(cfg); saveLocal(cfg); };
     row.appendChild(b);
   });
@@ -113,7 +113,8 @@ function buildShapeRow(cfg){
   SHAPES.forEach(s=>{
     const b=document.createElement('button');
     b.className='chip'+(cfg.s===s.id?' sel':'');
-    b.textContent=s.name;
+    b.title=s.name;
+    b.innerHTML=`<span class="shape-ico shaped shape-${s.id}"></span>`;
     b.onclick=()=>{ cfg.s=s.id; sel(row,b); applyPreview(cfg); saveLocal(cfg); };
     row.appendChild(b);
   });
@@ -133,17 +134,21 @@ function buildSizeRow(cfg){
   SIZES.forEach((z,i)=>{
     const b=document.createElement('button');
     b.className='chip'+(cfg.z===i?' sel':'');
-    b.innerHTML=`${i+1}<small>${z}px</small>`;
+    b.title=(i+1)+' / '+z+'px';
+    const d=6+i*2; // 6→24px
+    b.innerHTML=`<span class="sdot" style="width:${d}px;height:${d}px"></span>`;
     b.onclick=()=>{ cfg.z=i; sel(row,b); applyPreview(cfg); saveLocal(cfg); };
     row.appendChild(b);
   });
 }
+const FX_GLYPH={ripple:'◎',wave:'〜',pulse:'⊙',bars:'▮',glow:'✺',rotate:'↻',sparkle:'✦',orbit:'◍',concentric:'◉',aurora:'≋'};
 function buildFxRow(cfg){
   const row=$('fxRow'); row.innerHTML='';
   EFFECTS.forEach(f=>{
     const b=document.createElement('button');
     b.className='chip'+(cfg.f===f.id?' sel':'');
-    b.textContent=f.name;
+    b.title=f.name;
+    b.innerHTML=`<span class="fx-glyph">${FX_GLYPH[f.id]||'✨'}</span>`;
     b.onclick=()=>{ cfg.f=f.id; sel(row,b); applyPreview(cfg); saveLocal(cfg); runFxOnce($('fxLayer')); };
     row.appendChild(b);
   });
