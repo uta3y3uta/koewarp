@@ -226,32 +226,95 @@ function initRecorder(cfg){
   const timerEl=$('recTimer');
   const fxLayer=$('recFxLayer');
 
-  let state='idle'; // idle | recording | processing
-  let mediaRecorder=null, chunks=[], stream=null;
-  let audioCtx=null, analyser=null, rafId=null;
+  // ---- 音声向け設定（授業のグループ/ペア対話→Gemini/NotebookLM用）----
+  const TARGET_SR=16000;    // 16kHz：音声認識に最適・軽量
+  const KBPS=48;            // 声ならこれで十分クリア
+  const SEGMENT_SEC=45*60;  // 45分ごとに自動分割（1ファイル約16MB）
+
+  let state='idle';         // idle | recording | processing
+  let stream=null, audioCtx=null, srcNode=null, capNode=null;
+  let lame=null, enc=null, mp3Parts=[], sampleRate=TARGET_SR;
+  let segSamples=0, totalSamples=0, partNo=0, baseName='';
+  let uploads=[];
   let startTime=0, timerId=null;
 
   mic.addEventListener('click', async ()=>{
     if(state==='idle'){ await startRec(); }
-    else if(state==='recording'){ stopRec(); }
+    else if(state==='recording'){ await stopRec(); }
   });
+
+  function nameNow(){ return sanitize($('recName').value.trim() || ('コエワープ_'+tstamp())); }
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function newEncoder(){ enc=new lame.Mp3Encoder(1, sampleRate, KBPS); mp3Parts=[]; segSamples=0; }
+  function floatToInt16(f){
+    const n=f.length, out=new Int16Array(n);
+    for(let i=0;i<n;i++){ let v=f[i]; v=v<-1?-1:(v>1?1:v); out[i]=v<0?v*0x8000:v*0x7fff; }
+    return out;
+  }
+  // 逐次エンコード：PCMブロックが届くたびにMP3化して溜める（生データは保持しない）
+  function pushPcm(f){
+    if(state!=='recording'||!enc) return;
+    const buf=enc.encodeBuffer(floatToInt16(f));
+    if(buf.length>0) mp3Parts.push(new Uint8Array(buf));
+    segSamples+=f.length; totalSamples+=f.length;
+    if(segSamples >= SEGMENT_SEC*sampleRate){ flushSegment(false); }
+  }
+  function currentBlob(){
+    const end=enc.flush();
+    if(end.length>0) mp3Parts.push(new Uint8Array(end));
+    return new Blob(mp3Parts,{type:'audio/mpeg'});
+  }
+  // セグメント確定→送信。分割ありなら _01,_02… なしなら名前そのまま
+  function flushSegment(isFinal){
+    const blob=currentBlob();
+    let name;
+    if(isFinal && partNo===0){ name=baseName; }
+    else { partNo++; name=baseName+'_'+pad2(partNo); }
+    uploads.push(uploadMp3(cfg.u, blob, name));
+    if(!isFinal){ setStatus('パート'+partNo+'を送信中…（録音は継続中）','busy'); newEncoder(); }
+  }
 
   async function startRec(){
     if(!cfg.u){ setStatus('記録先が未設定です','err'); return; }
     if(/\/dev(\?|$)/.test(cfg.u) || /\/edit(\?|$)/.test(cfg.u)){
       setStatus('⚠ 記録先URLが正しくありません（末尾が /exec のURLを使ってください）','err'); return;
     }
+    setStatus('準備しています…','busy');
+    try{ lame=await loadLame(); }catch(e){ setStatus('変換モジュールの読み込みに失敗しました','err'); return; }
     try{
-      stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      stream=await navigator.mediaDevices.getUserMedia({audio:{
+        channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true
+      }});
     }catch(e){ setStatus('マイクの使用が許可されませんでした','err'); return; }
 
-    chunks=[];
-    const mime = pickMime();
-    mediaRecorder = mime ? new MediaRecorder(stream,{mimeType:mime}) : new MediaRecorder(stream);
-    mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
-    mediaRecorder.onstop=onStop;
-    mediaRecorder.start();
+    const AC=window.AudioContext||window.webkitAudioContext;
+    try{ audioCtx=new AC({sampleRate:TARGET_SR}); }catch(e){ audioCtx=new AC(); }
+    sampleRate=audioCtx.sampleRate;               // 16kHz（対応外なら実レート）
+    srcNode=audioCtx.createMediaStreamSource(stream);
 
+    baseName=''; partNo=0; totalSamples=0; uploads=[];
+    newEncoder();
+
+    // キャプチャ：AudioWorklet優先（音声スレッドで安定）／不可ならScriptProcessor
+    let usingWorklet=false;
+    if(audioCtx.audioWorklet){
+      try{
+        const code="class P extends AudioWorkletProcessor{constructor(){super();this.b=[];this.n=0;}process(inp){const i=inp[0];if(i&&i[0]){const c=i[0];this.b.push(new Float32Array(c));this.n+=c.length;if(this.n>=2048){const o=new Float32Array(this.n);let k=0;for(const x of this.b){o.set(x,k);k+=x.length;}this.port.postMessage(o,[o.buffer]);this.b=[];this.n=0;}}return true;}}registerProcessor('cap',P);";
+        const url=URL.createObjectURL(new Blob([code],{type:'application/javascript'}));
+        await audioCtx.audioWorklet.addModule(url);
+        capNode=new AudioWorkletNode(audioCtx,'cap');
+        capNode.port.onmessage=(e)=>pushPcm(e.data);
+        usingWorklet=true;
+      }catch(e){ usingWorklet=false; }
+    }
+    if(!usingWorklet){
+      capNode=audioCtx.createScriptProcessor(4096,1,1);
+      capNode.onaudioprocess=(e)=>{ pushPcm(new Float32Array(e.inputBuffer.getChannelData(0))); };
+    }
+    srcNode.connect(capNode);
+    capNode.connect(audioCtx.destination);        // 出力は無音（フィードバックなし）
+
+    baseName=nameNow();                            // 開始時の名前を仮ロック（分割時に使用）
     state='recording';
     mic.classList.add('recording');
     fxLayer.classList.add('fx-run');
@@ -259,24 +322,22 @@ function initRecorder(cfg){
     startTimer();
   }
 
-  function stopRec(){
-    if(mediaRecorder && mediaRecorder.state!=='inactive'){ mediaRecorder.stop(); }
+  async function stopRec(){
     state='processing';
     mic.classList.remove('recording');
     fxLayer.classList.remove('fx-run');
     stopTimer();
-    setStatus('MP3に変換しています…','busy');
-  }
-
-  async function onStop(){
+    setStatus('送信しています…','busy');
     try{
+      try{ srcNode&&srcNode.disconnect(); }catch(e){}
+      try{ capNode&&capNode.disconnect(); }catch(e){}
       if(stream){ stream.getTracks().forEach(t=>t.stop()); }
-      const blob=new Blob(chunks,{type:chunks[0]?.type||'audio/webm'});
-      const mp3=await encodeToMp3(blob, setStatus);
-      setStatus('ドライブへ送信しています…','busy');
-      const name=($('recName').value.trim()||'コエワープ_'+tstamp());
-      await uploadMp3(cfg.u, mp3, name);
-      setStatus('✅ 送信しました！ありがとうございました','done');
+      if(partNo===0){ baseName=nameNow(); }        // 分割なし→停止時の入力名を採用
+      flushSegment(true);
+      await Promise.all(uploads);
+      if(audioCtx){ try{ await audioCtx.close(); }catch(e){} }
+      const tail=partNo>1?('（全'+partNo+'ファイル）'):'';
+      setStatus('✅ 送信しました！ありがとうございました'+tail,'done');
       timerEl.hidden=true;
       $('recName').value='';
     }catch(err){
@@ -298,11 +359,6 @@ function initRecorder(cfg){
   function setStatus(t,cls){ status.textContent=t; status.className='rec-status'+(cls?' '+cls:''); }
 }
 
-function pickMime(){
-  const cand=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg'];
-  for(const m of cand){ if(window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m; }
-  return '';
-}
 function tstamp(){ const d=new Date(); const p=n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
 
@@ -313,38 +369,6 @@ async function loadLame(){
   _lame=await import('https://cdn.jsdelivr.net/npm/@breezystack/lamejs@1.2.7/+esm');
   return _lame;
 }
-async function encodeToMp3(blob, setStatus){
-  const lame=await loadLame();
-  const buf=await blob.arrayBuffer();
-  const AC=window.AudioContext||window.webkitAudioContext;
-  const ctx=new AC();
-  const audio=await ctx.decodeAudioData(buf);
-  const sampleRate=audio.sampleRate;
-  // モノラルにダウンミックス
-  const ch=audio.numberOfChannels;
-  const L=audio.getChannelData(0);
-  const R=ch>1?audio.getChannelData(1):null;
-  const len=L.length;
-  const mono=new Int16Array(len);
-  for(let i=0;i<len;i++){
-    let v=R?(L[i]+R[i])/2:L[i];
-    v=Math.max(-1,Math.min(1,v));
-    mono[i]=v<0?v*0x8000:v*0x7fff;
-  }
-  ctx.close();
-  const enc=new lame.Mp3Encoder(1, sampleRate, 128);
-  const block=1152; const out=[];
-  for(let i=0;i<mono.length;i+=block){
-    const slice=mono.subarray(i,i+block);
-    const mp3buf=enc.encodeBuffer(slice);
-    if(mp3buf.length>0) out.push(new Uint8Array(mp3buf));
-    if(setStatus && i%(block*200)===0){ setStatus(`MP3に変換中… ${Math.round(i/mono.length*100)}%`,'busy'); }
-  }
-  const end=enc.flush();
-  if(end.length>0) out.push(new Uint8Array(end));
-  return new Blob(out,{type:'audio/mpeg'});
-}
-
 /* ---------- アップロード（Google Apps Script受け取り口へ） ----------
    Apps Scriptの /exec は応答時に googleusercontent.com へ302リダイレクトするため，
    通常のfetch(cors)ではレスポンスを読めず "Failed to fetch" になる。
