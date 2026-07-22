@@ -139,10 +139,6 @@ function pkSet(kind,cfg,v){
   if(kind==='theme')cfg.t=v; else if(kind==='shape')cfg.s=v;
   else if(kind==='color')cfg.c=+v; else if(kind==='size')cfg.z=+v; else cfg.f=v;
 }
-function pkLabel(kind,v){
-  const it=pkItems(kind).find(x=>String(x.v)===String(v));
-  return it?it.label:'';
-}
 function pkSwatch(kind,v){
   const el=document.createElement('span');
   if(kind==='theme'){
@@ -179,8 +175,7 @@ function makePicker(p, cfg){
     const ic=document.createElement('span'); ic.className='ph-ic'; ic.textContent=p.ic;
     const val=document.createElement('span'); val.className='ph-val';
     const mini=document.createElement('span'); mini.className='ph-mini'; mini.appendChild(pkSwatch(kind,v));
-    const nm=document.createElement('span'); nm.className='ph-name'; nm.textContent=pkLabel(kind,v);
-    val.appendChild(mini); val.appendChild(nm);
+    val.appendChild(mini);
     const car=document.createElement('span'); car.className='ph-caret'; car.textContent='▾';
     head.append(ic,val,car);
   }

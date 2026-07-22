@@ -85,7 +85,7 @@ body{
 .ph-val{flex:1;min-width:0;display:flex;align-items:center;gap:10px;
   font-size:14px;font-weight:700;color:var(--ink);overflow:hidden}
 .ph-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ph-mini{flex:none;width:26px;height:26px;display:flex;align-items:center;justify-content:center}
+.ph-mini{flex:none;width:30px;height:30px;display:flex;align-items:center;justify-content:center}
 .ph-caret{flex:none;color:var(--sub);font-size:11px;transition:transform .2s}
 .picker.open .ph-caret{transform:rotate(180deg)}
 
@@ -116,10 +116,10 @@ body{
 .sw-fx{font-size:21px;line-height:1;color:var(--brand)}
 
 /* head内の小プレビュー */
-.ph-mini .sw-theme{width:26px;height:19px}
-.ph-mini .sw-shape{width:19px;height:19px}
-.ph-mini .sw-color{width:19px;height:19px}
-.ph-mini .sw-fx{font-size:19px}
+.ph-mini .sw-theme{width:30px;height:21px}
+.ph-mini .sw-shape{width:22px;height:22px}
+.ph-mini .sw-color{width:22px;height:22px}
+.ph-mini .sw-fx{font-size:22px}
 
 /* ---- 右：プレビュー ---- */
 .stage-wrap{position:relative;border-radius:20px;
