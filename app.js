@@ -117,13 +117,13 @@ function initSettings(){
 const COLOR_NAMES=['レッド','ブルー','オレンジ','ティール','パープル','グリーン','マゼンタ','ゴールド','ブラック','コーラル'];
 const FX_GLYPH={ripple:'◎',wave:'〜',pulse:'⊙',bars:'▮',glow:'✺',rotate:'↻',sparkle:'✦',orbit:'◍',concentric:'◉',aurora:'≋'};
 
-/* ---- ビジュアルピッカー：普段は畳まれ，タップで展開して見た目から選ぶ ---- */
+/* ---- ビジュアルピッカー：正方形アイコンを並べ，押すと下に見本が展開 ---- */
 const PICKERS=[
-  {kind:'theme', ic:'🎨'},
-  {kind:'shape', ic:'🎙️'},
-  {kind:'color', ic:'🌈'},
-  {kind:'size',  ic:'📏'},
-  {kind:'fx',    ic:'✨'},
+  {kind:'theme', title:'テーマカラー'},
+  {kind:'shape', title:'マイクの形'},
+  {kind:'color', title:'マイクの色'},
+  {kind:'size',  title:'大きさ'},
+  {kind:'fx',    title:'エフェクト'},
 ];
 function pkItems(kind){
   if(kind==='theme') return THEMES.map(t=>({v:t.id,label:t.name}));
@@ -156,30 +156,23 @@ function pkSwatch(kind,v){
   }
   return el;
 }
-function closeAllPickers(except){
-  document.querySelectorAll('.picker.open').forEach(el=>{
-    if(el===except) return;
-    el.classList.remove('open');
-    const g=el.querySelector('.picker-grid'); if(g) g.hidden=true;
-  });
-}
-function makePicker(p, cfg){
-  const kind=p.kind;
-  const wrap=document.createElement('div'); wrap.className='picker'; wrap.dataset.kind=kind;
-  const head=document.createElement('button'); head.type='button'; head.className='picker-head';
+function buildPickers(cfg){
+  const host=$('pickers'); host.innerHTML='';
+  const bar=document.createElement('div'); bar.className='picker-bar';
   const grid=document.createElement('div'); grid.className='picker-grid'; grid.hidden=true;
+  let openKind=null;
 
-  function renderHead(){
-    const v=pkGet(kind,cfg);
-    head.innerHTML='';
-    const ic=document.createElement('span'); ic.className='ph-ic'; ic.textContent=p.ic;
-    const val=document.createElement('span'); val.className='ph-val';
-    const mini=document.createElement('span'); mini.className='ph-mini'; mini.appendChild(pkSwatch(kind,v));
-    val.appendChild(mini);
-    const car=document.createElement('span'); car.className='ph-caret'; car.textContent='▾';
-    head.append(ic,val,car);
+  const heads={};
+  function paintHead(kind){
+    const h=heads[kind]; h.innerHTML=''; h.appendChild(pkSwatch(kind, pkGet(kind,cfg)));
   }
-  function renderGrid(){
+  function closeGrid(){
+    openKind=null; grid.hidden=true;
+    bar.querySelectorAll('.picker-head.on').forEach(h=>h.classList.remove('on'));
+  }
+  function openGrid(kind){
+    openKind=kind;
+    Object.values(heads).forEach(h=>h.classList.toggle('on', h===heads[kind]));
     grid.innerHTML='';
     const cur=pkGet(kind,cfg);
     pkItems(kind).forEach(it=>{
@@ -191,30 +184,29 @@ function makePicker(p, cfg){
         pkSet(kind,cfg,it.v);
         grid.querySelectorAll('.swatch.on').forEach(x=>x.classList.remove('on'));
         b.classList.add('on');
-        renderHead();
+        paintHead(kind);
         applyPreview(cfg); saveLocal(cfg);
         runFxOnce($('fxLayer'));   // 選ぶたびに変化をプレビュー再生
       });
       grid.appendChild(b);
     });
+    grid.hidden=false;
   }
-  head.addEventListener('click',(e)=>{
-    e.stopPropagation();
-    const willOpen=!wrap.classList.contains('open');
-    closeAllPickers();
-    if(willOpen){ wrap.classList.add('open'); grid.hidden=false; }
+
+  PICKERS.forEach(p=>{
+    const h=document.createElement('button'); h.type='button'; h.className='picker-head';
+    h.dataset.kind=p.kind; h.title=p.title; h.setAttribute('aria-label',p.title);
+    heads[p.kind]=h;
+    paintHead(p.kind);
+    h.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      if(openKind===p.kind) closeGrid(); else openGrid(p.kind);
+    });
+    bar.appendChild(h);
   });
 
-  renderHead(); renderGrid();
-  wrap.append(head,grid);
-  return wrap;
-}
-function buildPickers(cfg){
-  const host=$('pickers'); host.innerHTML='';
-  PICKERS.forEach(p=> host.appendChild(makePicker(p,cfg)));
-  document.addEventListener('click',(e)=>{
-    if(!e.target.closest('.picker')) closeAllPickers();
-  });
+  host.append(bar,grid);
+  document.addEventListener('click',(e)=>{ if(!e.target.closest('#pickers')) closeGrid(); });
 }
 
 /* プレビュー反映 */

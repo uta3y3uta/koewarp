@@ -18,15 +18,14 @@ body{
 [hidden]{display:none !important}
 
 /* ---- header ---- */
-.app-head{display:flex;align-items:center;justify-content:center;gap:10px;
-  padding:6px 0 14px}
-.logo-mic{font-size:30px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.28))}
-/* ポケモンロゴ風オマージュ：丸ゴシック太字＋黄色文字＋濃紺の縁取り */
-.logo-text{font-family:"Mochiy Pop P One","M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif;
-  font-weight:400;font-size:30px;letter-spacing:.02em;
-  color:#ffde00;-webkit-text-fill-color:#ffde00;
-  -webkit-text-stroke:3px #2a4b9b;paint-order:stroke fill;
-  text-shadow:0 3px 0 #1c3268,0 5px 6px rgba(0,0,0,.28)}
+/* アプリ名：初代ポケットモンスターのロゴを意識した丸ゴシック＋縁取り。
+   文字色はテーマ（--brand）に連動し，縁取りは濃色（--ink）で変化する */
+.app-title{font-family:"Mochiy Pop P One","M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif;
+  font-weight:400;font-size:34px;line-height:1.1;text-align:center;margin:0 0 4px;letter-spacing:.02em;
+  color:var(--brand);-webkit-text-fill-color:var(--brand);
+  -webkit-text-stroke:3.5px var(--ink);paint-order:stroke fill;
+  text-shadow:0 3px 0 rgba(0,0,0,.22),0 5px 7px rgba(0,0,0,.16);
+  transition:color .3s}
 
 /* ---- 2カラム studio ---- */
 .studio{display:grid;grid-template-columns:minmax(0,320px) 1fr;gap:18px;align-items:stretch}
@@ -74,24 +73,25 @@ body{
   border-radius:10px;font-size:12px;color:var(--ink)}
 .sg-trouble>b{color:#c0392b}
 
-/* ===== ビジュアルピッカー（タップで展開して選ぶ） ===== */
-.pickers{display:flex;flex-direction:column;gap:10px}
-.picker{position:relative}
-.picker-head{width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;
-  background:var(--panel);border:1.5px solid var(--line);border-radius:12px;
-  padding:8px 12px;outline:none;transition:border-color .15s,box-shadow .15s}
-.picker.open .picker-head{border-color:var(--brand);box-shadow:0 6px 16px rgba(0,0,0,.10)}
-.ph-ic{font-size:17px;flex:none;width:22px;text-align:center}
-.ph-val{flex:1;min-width:0;display:flex;align-items:center;gap:10px;
-  font-size:14px;font-weight:700;color:var(--ink);overflow:hidden}
-.ph-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ph-mini{flex:none;width:30px;height:30px;display:flex;align-items:center;justify-content:center}
-.ph-caret{flex:none;color:var(--sub);font-size:11px;transition:transform .2s}
-.picker.open .ph-caret{transform:rotate(180deg)}
+/* ===== ビジュアルピッカー（正方形アイコン＋押すと下に見本展開） ===== */
+.pickers{display:flex;flex-direction:column;gap:0}
+/* 正方形アイコンを横一列に */
+.picker-bar{display:flex;gap:8px}
+.picker-head{flex:1;aspect-ratio:1/1;min-width:0;display:flex;align-items:center;justify-content:center;
+  padding:0;cursor:pointer;background:var(--panel);border:1.5px solid var(--line);border-radius:13px;
+  outline:none;transition:border-color .15s,box-shadow .15s,transform .1s}
+.picker-head:active{transform:scale(.94)}
+.picker-head.on{border-color:var(--brand);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 24%,transparent),0 4px 12px rgba(0,0,0,.10)}
+/* アイコン内の見本 */
+.picker-head .sw-theme{width:60%;height:42%}
+.picker-head .sw-shape{width:52%;height:52%}
+.picker-head .sw-color{width:52%;height:52%}
+.picker-head .sw-fx{font-size:24px}
 
-/* 展開グリッド */
+/* 展開グリッド（左カラム全幅・5列） */
 .picker-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
-  margin-top:8px;padding:11px;background:var(--panel);
+  margin-top:10px;padding:11px;background:var(--panel);
   border:1.5px solid var(--line);border-radius:12px;
   animation:pkOpen .18s ease-out}
 @keyframes pkOpen{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
@@ -114,12 +114,6 @@ body{
 .sw-color{width:62%;height:62%;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
 .sw-size{background:var(--sub);border-radius:50%}
 .sw-fx{font-size:21px;line-height:1;color:var(--brand)}
-
-/* head内の小プレビュー */
-.ph-mini .sw-theme{width:30px;height:21px}
-.ph-mini .sw-shape{width:22px;height:22px}
-.ph-mini .sw-color{width:22px;height:22px}
-.ph-mini .sw-fx{font-size:22px}
 
 /* ---- 右：プレビュー ---- */
 .stage-wrap{position:relative;border-radius:20px;
