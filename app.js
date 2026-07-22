@@ -75,12 +75,8 @@ function initSettings(){
   $('setupToggle').addEventListener('click',(e)=>{ e.preventDefault();
     const g=$('setupGuide'); g.hidden=!g.hidden; });
 
-  // ---- チップ生成 ----
-  buildThemeRow(cfg);
-  buildShapeRow(cfg);
-  buildColorRow(cfg);
-  buildSizeRow(cfg);
-  buildFxRow(cfg);
+  // ---- プルダウン生成 ----
+  buildSelects(cfg);
 
   applyPreview(cfg);
 
@@ -97,63 +93,29 @@ function initSettings(){
   window.__cfg = cfg;
 }
 
-function buildThemeRow(cfg){
-  const row=$('themeRow'); row.innerHTML='';
-  THEMES.forEach(t=>{
-    const b=document.createElement('button');
-    b.className='chip theme-chip'+(cfg.t===t.id?' sel':'');
-    b.title=t.name;
-    b.innerHTML=`<div class="tswatch">${t.cols.map(c=>`<i style="background:${c}"></i>`).join('')}</div>`;
-    b.onclick=()=>{ cfg.t=t.id; sel(row,b); applyPreview(cfg); saveLocal(cfg); };
-    row.appendChild(b);
-  });
-}
-function buildShapeRow(cfg){
-  const row=$('shapeRow'); row.innerHTML='';
-  SHAPES.forEach(s=>{
-    const b=document.createElement('button');
-    b.className='chip'+(cfg.s===s.id?' sel':'');
-    b.title=s.name;
-    b.innerHTML=`<span class="shape-ico shaped shape-${s.id}"></span>`;
-    b.onclick=()=>{ cfg.s=s.id; sel(row,b); applyPreview(cfg); saveLocal(cfg); };
-    row.appendChild(b);
-  });
-}
-function buildColorRow(cfg){
-  const row=$('colorRow'); row.innerHTML='';
-  COLORS.forEach((c,i)=>{
-    const b=document.createElement('button');
-    b.className='chip'+(cfg.c===i?' sel':'');
-    b.style.background=c;
-    b.onclick=()=>{ cfg.c=i; sel(row,b); applyPreview(cfg); saveLocal(cfg); };
-    row.appendChild(b);
-  });
-}
-function buildSizeRow(cfg){
-  const row=$('sizeRow'); row.innerHTML='';
-  SIZES.forEach((z,i)=>{
-    const b=document.createElement('button');
-    b.className='chip'+(cfg.z===i?' sel':'');
-    b.title=(i+1)+' / '+z+'px';
-    const d=6+i*2; // 6→24px
-    b.innerHTML=`<span class="sdot" style="width:${d}px;height:${d}px"></span>`;
-    b.onclick=()=>{ cfg.z=i; sel(row,b); applyPreview(cfg); saveLocal(cfg); };
-    row.appendChild(b);
-  });
-}
+const COLOR_NAMES=['レッド','ブルー','オレンジ','ティール','パープル','グリーン','マゼンタ','ゴールド','ブラック','コーラル'];
 const FX_GLYPH={ripple:'◎',wave:'〜',pulse:'⊙',bars:'▮',glow:'✺',rotate:'↻',sparkle:'✦',orbit:'◍',concentric:'◉',aurora:'≋'};
-function buildFxRow(cfg){
-  const row=$('fxRow'); row.innerHTML='';
-  EFFECTS.forEach(f=>{
-    const b=document.createElement('button');
-    b.className='chip'+(cfg.f===f.id?' sel':'');
-    b.title=f.name;
-    b.innerHTML=`<span class="fx-glyph">${FX_GLYPH[f.id]||'✨'}</span>`;
-    b.onclick=()=>{ cfg.f=f.id; sel(row,b); applyPreview(cfg); saveLocal(cfg); runFxOnce($('fxLayer')); };
-    row.appendChild(b);
-  });
+
+function opt(value,label,selected){
+  const o=document.createElement('option');
+  o.value=value; o.textContent=label; if(selected) o.selected=true; return o;
 }
-function sel(row,btn){ [...row.children].forEach(c=>c.classList.remove('sel')); btn.classList.add('sel'); }
+function buildSelects(cfg){
+  const ts=$('themeSel'), ss=$('shapeSel'), cs=$('colorSel'), zs=$('sizeSel'), fs=$('fxSel');
+  ts.innerHTML=''; ss.innerHTML=''; cs.innerHTML=''; zs.innerHTML=''; fs.innerHTML='';
+
+  THEMES.forEach(t=> ts.appendChild(opt(t.id, '🎨 '+t.name, cfg.t===t.id)));
+  SHAPES.forEach(s=> ss.appendChild(opt(s.id, '🎙 '+s.name, cfg.s===s.id)));
+  COLORS.forEach((c,i)=> cs.appendChild(opt(i, '● '+COLOR_NAMES[i], cfg.c===i)));
+  SIZES.forEach((z,i)=> zs.appendChild(opt(i, '大きさ '+(i+1), cfg.z===i)));
+  EFFECTS.forEach(f=> fs.appendChild(opt(f.id, (FX_GLYPH[f.id]||'✨')+' '+f.name, cfg.f===f.id)));
+
+  ts.onchange=()=>{ cfg.t=ts.value; applyPreview(cfg); saveLocal(cfg); };
+  ss.onchange=()=>{ cfg.s=ss.value; applyPreview(cfg); saveLocal(cfg); };
+  cs.onchange=()=>{ cfg.c=+cs.value; applyPreview(cfg); saveLocal(cfg); };
+  zs.onchange=()=>{ cfg.z=+zs.value; applyPreview(cfg); saveLocal(cfg); };
+  fs.onchange=()=>{ cfg.f=fs.value; applyPreview(cfg); saveLocal(cfg); runFxOnce($('fxLayer')); };
+}
 
 /* プレビュー反映 */
 function applyPreview(cfg){
