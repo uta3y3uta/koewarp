@@ -66,10 +66,8 @@ function initSettings(){
 
   function updateDriveStatus(){
     const v = driveUrl.value.trim();
-    const dot = $('driveDot');
     const ok = /^https?:\/\//.test(v);
-    dot.className = 'dot'+(ok?' ok':'');
-    dot.title = ok ? '記録先を設定しました' : '未設定';
+    // URLが有効なときだけ「🔍接続テスト」リンクを表示（ドット廃止）
     const tl = $('testLink');
     if(ok){ tl.hidden=false; tl.href=v; } else { tl.hidden=true; }
   }

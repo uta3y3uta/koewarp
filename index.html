@@ -21,11 +21,9 @@
 
       <!-- 記録先URL -->
       <div class="url-field" id="driveCard">
-        <span class="url-ic">📥</span>
         <input type="url" id="driveUrl" inputmode="url" autocomplete="off"
           placeholder="記録先URLを貼り付け" />
         <button class="help-btn" id="setupToggle" type="button" aria-label="使い方">?</button>
-        <span class="dot" id="driveDot" title="未設定"></span>
       </div>
 
       <a class="test-link" id="testLink" href="#" target="_blank" rel="noopener" hidden>🔍 記録先の接続テスト</a>
@@ -40,59 +38,6 @@
 
       <!-- ビジュアルピッカー群（タップで展開して選ぶ） -->
       <div class="pickers" id="pickers"></div>
-
-      <!-- 使い方（初期は隠す） -->
-      <div class="setup-guide" id="setupGuide" hidden>
-        <div class="sg-head">📖 受け取り口の作り方（初回だけ・約5分）</div>
-        <ol class="sg-steps">
-          <li>
-            <b>保存先フォルダを用意する</b><br>
-            <a href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener">Googleドライブ</a>で音声をためるフォルダを作成（または既存のを開く）。
-            そのフォルダを開いた状態の<b>ブラウザのURL</b>をコピーします。
-            <div class="sg-sub">例：<code>drive.google.com/drive/folders/<b>1AbC…XyZ</b></code> ← 末尾がフォルダID</div>
-          </li>
-          <li>
-            <b>フォルダURLをここに貼り付ける</b>
-            <input type="text" id="folderUrl" placeholder="フォルダのURLを貼り付け" />
-            <div class="sg-status" id="folderStatus">未入力</div>
-          </li>
-          <li>
-            <b>コードをコピーする</b><br>
-            <button type="button" class="sg-copy" id="copyGas">📋 GASコードをコピー</button>
-            <span class="sg-note">フォルダIDが自動で埋め込まれます</span>
-          </li>
-          <li>
-            <b>Apps Scriptに貼り付ける</b><br>
-            <a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">Apps Scriptで新規プロジェクト</a>を開く →
-            画面の既存コード（<code>function myFunction…</code>）を選択して全部消す（<b>Ctrl+A →&nbsp;Delete</b>）→
-            <b>Ctrl+V</b>で貼り付け → <b>💾保存</b>（Ctrl+S）。
-          </li>
-          <li>
-            <b>デプロイして公開する</b>
-            <ul class="sg-ul">
-              <li>右上の青い<b>「デプロイ」→「新しいデプロイ」</b></li>
-              <li>左の⚙（歯車）→<b>「ウェブアプリ」</b>を選択</li>
-              <li>「次のユーザーとして実行」＝<b>自分</b></li>
-              <li>「アクセスできるユーザー」＝<b>全員</b> → <b>「デプロイ」</b></li>
-              <li>初回は承認画面が出ます：自分のアカウントを選択 →「詳細」→「（安全ではないページ）に移動」→「許可」</li>
-            </ul>
-          </li>
-          <li>
-            <b>URLを貼り付けて完成</b><br>
-            表示された「ウェブアプリ」のURL（末尾が<code>…/exec</code>）をコピーし，
-            <b>このページ上部の記録先欄</b>に貼り付ければ完了！
-          </li>
-        </ol>
-        <div class="sg-trouble">
-          <b>⚠ 送信に失敗するとき</b>
-          <ul class="sg-ul">
-            <li>記録先URLの末尾が <code>/exec</code> になっているか（<code>/dev</code> や <code>/edit</code> はNG）</li>
-            <li>デプロイの「アクセスできるユーザー」が <b>全員</b> になっているか</li>
-            <li>コードを直したら，再度<b>「デプロイ」→「デプロイを管理」→ 鉛筆✏ → バージョン「新しいバージョン」→ デプロイ</b>で更新</li>
-            <li>上の「🔍 接続テスト」を押して「正常に動いています」と表示されればOK</li>
-          </ul>
-        </div>
-      </div>
     </section>
 
     <!-- 右：プレビュー -->
@@ -104,6 +49,50 @@
         </button>
       </div>
     </section>
+  </div>
+
+  <!-- 使い方（初期は隠す・？で全幅の下方に展開） -->
+  <div class="setup-guide" id="setupGuide" hidden>
+    <div class="sg-head">📖 受け取り口の作り方（初回だけ・約5分）</div>
+    <ol class="sg-steps">
+      <li>
+        <b>保存先フォルダを用意する</b><br>
+        <a href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener">Googleドライブ</a>で音声をためるフォルダを作成（または既存のを開く）。
+        そのフォルダを開いた状態の<b>ブラウザのURL</b>をコピーします。
+        <div class="sg-sub">例：<code>drive.google.com/drive/folders/<b>1AbC…XyZ</b></code> ← 末尾がフォルダID</div>
+      </li>
+      <li>
+        <b>フォルダURLをここに貼り付ける</b>
+        <input type="text" id="folderUrl" placeholder="フォルダのURLを貼り付け" />
+        <div class="sg-status" id="folderStatus">未入力</div>
+      </li>
+      <li>
+        <b>コードをコピーする</b><br>
+        <button type="button" class="sg-copy" id="copyGas">📋 GASコードをコピー</button>
+        <span class="sg-note">フォルダIDが自動で埋め込まれます</span>
+      </li>
+      <li>
+        <b>Apps Scriptに貼り付ける</b><br>
+        <a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">Apps Scriptで新規プロジェクト</a>を開く →
+        画面の既存コード（<code>function myFunction…</code>）を選択して全部消す（<b>Ctrl+A →&nbsp;Delete</b>）→
+        <b>Ctrl+V</b>で貼り付け → <b>💾保存</b>（Ctrl+S）。
+      </li>
+      <li>
+        <b>デプロイして公開する</b>
+        <ul class="sg-ul">
+          <li>右上の青い<b>「デプロイ」→「新しいデプロイ」</b></li>
+          <li>左の⚙（歯車）→<b>「ウェブアプリ」</b>を選択</li>
+          <li>「次のユーザーとして実行」＝<b>自分</b></li>
+          <li>「アクセスできるユーザー」＝<b>全員</b> → <b>「デプロイ」</b></li>
+          <li>初回は承認画面が出ます：自分のアカウントを選択 →「詳細」→「（安全ではないページ）に移動」→「許可」</li>
+        </ul>
+      </li>
+      <li>
+        <b>URLを貼り付けて完成</b><br>
+        表示された「ウェブアプリ」のURL（末尾が<code>…/exec</code>）をコピーし，
+        <b>このページ上部の記録先欄</b>に貼り付ければ完了！
+      </li>
+    </ol>
   </div>
 </main>
 

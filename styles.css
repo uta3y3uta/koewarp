@@ -37,18 +37,20 @@ body{
 .url-field{position:relative;display:flex;align-items:center;gap:8px;
   background:var(--panel);border:2px solid var(--brand);border-radius:14px;padding:10px 12px;
   box-shadow:0 6px 18px rgba(227,53,13,.15)}
-.url-ic{font-size:18px}
 .url-field input{flex:1;border:none;outline:none;background:transparent;font-size:15px;color:#111;min-width:0}
 .help-btn{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line);
   background:#fff;color:var(--sub);font-weight:800;cursor:pointer;flex:none}
-.dot{width:11px;height:11px;border-radius:50%;background:#d0d0d0;flex:none;transition:background .2s}
-.dot.ok{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2)}
 .test-link{font-size:12px;color:var(--brand2);font-weight:700;text-decoration:none;
   align-self:flex-start;margin-top:-4px}
 .test-link:hover{text-decoration:underline}
 
-/* 使い方 */
-.setup-guide{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+/* 使い方（？で全幅の下方に展開・横長レイアウト） */
+.setup-guide{margin-top:16px;background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:16px 20px}
+@media(min-width:640px){
+  .setup-guide .sg-steps{column-count:2;column-gap:34px}
+  .setup-guide .sg-steps>li{break-inside:avoid;-webkit-column-break-inside:avoid}
+}
 .setup-guide code{background:#eef1f7;padding:1px 5px;border-radius:5px;font-size:11px;word-break:break-all}
 .setup-guide a{color:var(--brand2);font-weight:700}
 .sg-head{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:6px}
