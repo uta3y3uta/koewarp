@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>コエワープ</title>
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23e3350d'/%3E%3Crect x='4' y='46' width='92' height='8' fill='%23222'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23fff' stroke='%23222' stroke-width='6'/%3E%3C/svg%3E" />
+</head>
+<body>
+
+<!-- ========== 設定画面 ========== -->
+<main id="settings" class="screen">
+  <header class="app-head">
+    <div class="logo">
+      <span class="logo-ball"></span>
+      <span class="logo-text">コエワープ</span>
+    </div>
+    <p class="tagline">声を，指定したドライブへワープさせる。</p>
+  </header>
+
+  <!-- 1. 記録先ドライブ設定（最上部・目立たせる） -->
+  <section class="card drive-card" id="driveCard">
+    <div class="card-num">STEP 1</div>
+    <h2>📥 記録先の設定</h2>
+    <p class="hint">集めた音声データを保存する<strong>受け取り口URL</strong>を貼り付けてください。<br>
+      <a href="#" id="setupToggle">▶ 受け取り口URLの作り方（Googleドライブ連携・初回のみ）</a></p>
+    <input type="url" id="driveUrl" inputmode="url" autocomplete="off"
+      placeholder="https://script.google.com/macros/s/……/exec" />
+    <div class="drive-status" id="driveStatus">未設定</div>
+
+    <div class="setup-guide" id="setupGuide" hidden>
+      <ol>
+        <li><a href="https://script.google.com/home" target="_blank" rel="noopener">script.google.com</a> を開き，「新しいプロジェクト」を作成。</li>
+        <li>同梱の <code>gas/Code.gs</code> の中身を全部貼り付け，<code>FOLDER_ID</code> に保存先GoogleドライブフォルダのIDを入れる。<br>
+          <span class="tiny">（フォルダのURL <code>drive.google.com/drive/folders/<b>ここがID</b></code>）</span></li>
+        <li>「デプロイ」→「新しいデプロイ」→種類「ウェブアプリ」→アクセスできるユーザー「全員」で公開。</li>
+        <li>発行された <code>…/exec</code> のURLを上の欄に貼り付ければ完了！</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 2. プレビュー＆カスタマイズ -->
+  <section class="card">
+    <div class="card-num">STEP 2</div>
+    <h2>🎨 見た目のカスタマイズ</h2>
+
+    <!-- プレビュー -->
+    <div class="preview" id="preview">
+      <div class="preview-label">プレビュー</div>
+      <div class="mic-stage">
+        <div class="fx-layer" id="fxLayer"></div>
+        <button class="mic-btn" id="previewMic" type="button" aria-label="マイク">
+          <svg viewBox="0 0 24 24" class="mic-ic"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 1 0 2 0v-3.08A7 7 0 0 0 19 11z"/></svg>
+        </button>
+      </div>
+      <button class="fx-test" id="fxTest" type="button">▶ エフェクトを試す</button>
+    </div>
+
+    <!-- テーマ -->
+    <div class="setting-block">
+      <h3>テーマ（10種）</h3>
+      <div class="chip-row" id="themeRow"></div>
+    </div>
+
+    <!-- マイク形状 -->
+    <div class="setting-block">
+      <h3>マイクボタンの形（10種）</h3>
+      <div class="chip-row" id="shapeRow"></div>
+    </div>
+
+    <!-- マイク色 -->
+    <div class="setting-block">
+      <h3>マイクの色（10種）</h3>
+      <div class="chip-row swatch-row" id="colorRow"></div>
+    </div>
+
+    <!-- マイク大きさ -->
+    <div class="setting-block">
+      <h3>マイクの大きさ（10段階）</h3>
+      <div class="chip-row" id="sizeRow"></div>
+    </div>
+
+    <!-- エフェクト -->
+    <div class="setting-block">
+      <h3>録音中エフェクト（10種）</h3>
+      <div class="chip-row" id="fxRow"></div>
+    </div>
+  </section>
+
+  <!-- 3. 共有URL発行 -->
+  <section class="card share-card">
+    <div class="card-num">STEP 3</div>
+    <button class="publish-btn" id="publishBtn" type="button">🔗 共有URLを発行してコピー</button>
+    <div class="share-out" id="shareOut" hidden>
+      <input type="text" id="shareUrl" readonly />
+      <button id="copyBtn" type="button">コピー</button>
+    </div>
+    <p class="hint center" id="shareMsg"></p>
+  </section>
+
+  <footer class="app-foot">コエワープ / KoeWarp — 音声回収アプリ</footer>
+</main>
+
+<!-- ========== 録音画面（共有リンク先） ========== -->
+<main id="recorder" class="screen" hidden>
+  <div class="rec-wrap">
+    <h1 class="rec-title" id="recTitle">コエワープ</h1>
+    <input type="text" id="recName" class="rec-name" placeholder="データ名を入力（例：山田太郎_感想）" />
+    <div class="mic-stage rec-stage">
+      <div class="fx-layer" id="recFxLayer"></div>
+      <button class="mic-btn" id="recMic" type="button" aria-label="録音">
+        <svg viewBox="0 0 24 24" class="mic-ic"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 1 0 2 0v-3.08A7 7 0 0 0 19 11z"/></svg>
+      </button>
+    </div>
+    <div class="rec-status" id="recStatus">マイクを押して録音を開始</div>
+    <div class="rec-timer" id="recTimer" hidden>00:00</div>
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

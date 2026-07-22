@@ -1,0 +1,226 @@
+/* ===== コエワープ styles ===== */
+:root{
+  /* テーマで上書きされる変数 */
+  --bg1:#f6f7fb; --bg2:#e9edf6; --panel:#ffffff; --ink:#1d2330; --sub:#5a6473;
+  --brand:#e3350d; --brand2:#3b4cca; --line:#e3e7ef; --accent:#ffcb05;
+  --mic:#e3350d; --micsize:150px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",-apple-system,"Segoe UI",sans-serif;
+  color:var(--ink);
+  background:linear-gradient(160deg,var(--bg1),var(--bg2));
+  min-height:100vh;
+  transition:background .4s;
+}
+.screen{max-width:560px;margin:0 auto;padding:16px 14px 40px}
+[hidden]{display:none !important}
+
+/* ---- header ---- */
+.app-head{text-align:center;padding:10px 0 4px}
+.logo{display:inline-flex;align-items:center;gap:10px;font-size:26px;font-weight:800}
+.logo-text{letter-spacing:.06em;
+  background:linear-gradient(90deg,var(--brand),var(--brand2));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.logo-ball{width:26px;height:26px;border-radius:50%;position:relative;
+  background:linear-gradient(#fff 0 49%,#222 49% 51%,#fff 51% 100%);
+  border:3px solid #222;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.logo-ball::after{content:"";position:absolute;inset:0;margin:auto;width:8px;height:8px;
+  background:#fff;border:2.5px solid #222;border-radius:50%}
+.tagline{color:var(--sub);font-size:13px;margin:6px 0 2px}
+
+/* ---- cards ---- */
+.card{position:relative;background:var(--panel);border:1px solid var(--line);
+  border-radius:18px;padding:18px 16px;margin:16px 0;
+  box-shadow:0 6px 20px rgba(20,30,60,.06)}
+.card-num{position:absolute;top:-11px;left:16px;background:var(--brand);color:#fff;
+  font-size:11px;font-weight:800;letter-spacing:.1em;padding:3px 10px;border-radius:20px;
+  box-shadow:0 3px 8px rgba(0,0,0,.2)}
+.card h2{margin:6px 0 8px;font-size:18px}
+.card h3{margin:14px 0 8px;font-size:14px;color:var(--sub)}
+.hint{font-size:12.5px;color:var(--sub);line-height:1.6;margin:4px 0 10px}
+.hint.center{text-align:center}
+.hint a{color:var(--brand2);font-weight:700;text-decoration:none}
+.tiny{font-size:11px;color:var(--sub)}
+
+/* ---- drive card (目立たせる) ---- */
+.drive-card{border:2px solid var(--brand);
+  background:linear-gradient(var(--panel),var(--panel)) padding-box,
+             linear-gradient(120deg,var(--brand),var(--accent)) border-box;
+  box-shadow:0 8px 26px rgba(227,53,13,.18)}
+.drive-card input[type=url]{width:100%;font-size:16px;padding:14px 14px;
+  border:2px solid var(--line);border-radius:12px;outline:none;background:#fff;color:#111}
+.drive-card input[type=url]:focus{border-color:var(--brand)}
+.drive-status{margin-top:8px;font-size:12.5px;font-weight:700;color:#c0392b}
+.drive-status.ok{color:#1a9e4b}
+.setup-guide{margin-top:12px;background:#fff8ec;border:1px solid var(--accent);
+  border-radius:12px;padding:10px 14px}
+.setup-guide ol{margin:0;padding-left:18px;font-size:12.5px;line-height:1.9;color:#444}
+.setup-guide code{background:#eef1f7;padding:1px 5px;border-radius:5px;font-size:11.5px}
+
+/* ---- preview ---- */
+.preview{position:relative;border-radius:16px;padding:18px 10px 12px;
+  background:linear-gradient(150deg,var(--bg1),var(--bg2));
+  border:1px dashed var(--line);text-align:center}
+.preview-label{position:absolute;top:8px;left:12px;font-size:10.5px;font-weight:800;
+  color:var(--sub);letter-spacing:.14em}
+.mic-stage{position:relative;height:calc(var(--micsize) + 90px);
+  display:flex;align-items:center;justify-content:center}
+.fx-layer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;overflow:hidden}
+.fx-test{margin-top:4px;background:transparent;border:1px solid var(--line);
+  color:var(--sub);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer}
+
+/* ---- mic button base ---- */
+.mic-btn{position:relative;z-index:2;width:var(--micsize);height:var(--micsize);
+  border:none;cursor:pointer;color:#fff;background:var(--mic);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 24px rgba(0,0,0,.22),inset 0 3px 8px rgba(255,255,255,.35);
+  transition:transform .12s,box-shadow .2s,border-radius .2s;border-radius:50%}
+.mic-btn:active{transform:scale(.94)}
+.mic-btn.recording{animation:micpulse 1.1s ease-in-out infinite}
+@keyframes micpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.mic-ic{width:44%;height:44%;fill:currentColor;filter:drop-shadow(0 2px 3px rgba(0,0,0,.2))}
+
+/* mic shapes (10) */
+.shape-circle .mic-btn,[data-shape="circle"]{border-radius:50%}
+.shape-round   .mic-btn{border-radius:26%}
+.shape-squircle .mic-btn{border-radius:38% / 42%}
+.shape-pill    .mic-btn{border-radius:50px}
+.shape-hexagon .mic-btn{border-radius:12%;clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%)}
+.shape-octagon .mic-btn{clip-path:polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%)}
+.shape-diamond .mic-btn{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.shape-shield  .mic-btn{clip-path:path('M75 0 H75');border-radius:44% 44% 50% 50%/60% 60% 100% 100%}
+.shape-burst   .mic-btn{clip-path:polygon(50% 0,61% 20%,83% 12%,79% 35%,100% 50%,79% 65%,83% 88%,61% 80%,50% 100%,39% 80%,17% 88%,21% 65%,0 50%,21% 35%,17% 12%,39% 20%)}
+.shape-ring    .mic-btn{border-radius:50%;box-shadow:0 0 0 6px rgba(255,255,255,.7),0 0 0 11px var(--mic),0 10px 24px rgba(0,0,0,.25)}
+
+/* ---- setting chips ---- */
+.setting-block{margin-top:6px}
+.chip-row{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:#fff;color:var(--ink);
+  border-radius:11px;padding:8px 12px;font-size:12.5px;cursor:pointer;
+  transition:all .15s;min-width:40px;text-align:center;line-height:1.2}
+.chip small{display:block;font-size:10px;color:var(--sub);margin-top:2px}
+.chip:hover{border-color:var(--brand2)}
+.chip.sel{border-color:var(--brand);background:var(--brand);color:#fff;
+  box-shadow:0 4px 10px rgba(227,53,13,.3)}
+.chip.sel small{color:rgba(255,255,255,.85)}
+.swatch-row .chip{width:40px;height:40px;padding:0;border-radius:50%;min-width:0}
+.swatch-row .chip.sel{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--ink)}
+.theme-chip{position:relative;overflow:hidden}
+.theme-chip .tswatch{display:flex;height:14px;border-radius:4px;margin-bottom:4px;overflow:hidden}
+.theme-chip .tswatch i{flex:1}
+
+/* ---- share ---- */
+.share-card{text-align:center}
+.publish-btn{width:100%;font-size:17px;font-weight:800;color:#fff;border:none;cursor:pointer;
+  padding:18px;border-radius:16px;letter-spacing:.03em;
+  background:linear-gradient(120deg,var(--brand),var(--brand2));
+  box-shadow:0 10px 24px rgba(59,76,202,.28);transition:transform .12s,filter .2s}
+.publish-btn:hover{filter:brightness(1.05)}
+.publish-btn:active{transform:scale(.98)}
+.share-out{display:flex;gap:8px;margin-top:14px}
+.share-out input{flex:1;padding:12px;border:1.5px solid var(--line);border-radius:10px;
+  font-size:13px;background:#f7f9fc;color:#333}
+.share-out button{padding:0 16px;border:none;border-radius:10px;background:var(--brand2);
+  color:#fff;font-weight:700;cursor:pointer}
+.share-msg{min-height:18px}
+
+.app-foot{text-align:center;color:var(--sub);font-size:11px;margin-top:22px;opacity:.8}
+
+/* ================= 録音画面 ================= */
+#recorder{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.rec-wrap{width:100%;max-width:460px;text-align:center;padding:20px}
+.rec-title{font-size:24px;font-weight:800;margin:0 0 20px;
+  background:linear-gradient(90deg,var(--brand),var(--brand2));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.rec-name{width:100%;font-size:16px;padding:14px;border-radius:12px;
+  border:2px solid var(--line);outline:none;margin-bottom:10px;text-align:center;
+  background:#fff;color:#111}
+.rec-name:focus{border-color:var(--brand)}
+.rec-stage{height:calc(var(--micsize) + 120px)}
+.rec-status{font-size:14px;color:var(--sub);margin-top:6px;min-height:20px;font-weight:600}
+.rec-status.busy{color:var(--brand2)}
+.rec-status.done{color:#1a9e4b;font-weight:800}
+.rec-status.err{color:#c0392b}
+.rec-timer{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;
+  color:var(--brand);margin-top:6px;letter-spacing:.05em}
+
+/* ================= エフェクト（10種） ================= */
+.fx-el{position:absolute;pointer-events:none}
+/* 1 ripple 波紋 */
+.fx-ripple .fx-el{width:var(--micsize);height:var(--micsize);border-radius:50%;
+  border:3px solid var(--mic);animation:ripple 1.6s ease-out infinite}
+.fx-ripple .fx-el:nth-child(2){animation-delay:.5s}
+.fx-ripple .fx-el:nth-child(3){animation-delay:1s}
+@keyframes ripple{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.1);opacity:0}}
+/* 2 wave 波線 */
+.fx-wave .fx-el{width:calc(var(--micsize)*1.8);height:60px;
+  background:radial-gradient(circle,var(--mic) 2px,transparent 3px) 0 0/16px 16px;
+  opacity:.4;animation:wavemove 1.2s linear infinite}
+@keyframes wavemove{to{background-position:16px 0}}
+/* 3 pulse rings 同心円 */
+.fx-pulse .fx-el{width:var(--micsize);height:var(--micsize);border-radius:50%;
+  box-shadow:0 0 0 0 var(--mic);animation:pulsering 1.8s ease-out infinite;opacity:.6}
+@keyframes pulsering{0%{box-shadow:0 0 0 0 var(--mic)}100%{box-shadow:0 0 0 70px transparent}}
+/* 4 bars 音量バー */
+.fx-bars{gap:5px}
+.fx-bars .fx-el{position:relative;width:7px;height:20px;border-radius:6px;background:var(--mic);
+  animation:bars .8s ease-in-out infinite}
+@keyframes bars{0%,100%{height:14px;opacity:.5}50%{height:70px;opacity:1}}
+/* 5 glow グロー */
+.fx-glow .fx-el{width:var(--micsize);height:var(--micsize);border-radius:50%;
+  background:radial-gradient(circle,var(--mic),transparent 65%);filter:blur(10px);
+  animation:glow 1.6s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:.25;transform:scale(1)}50%{opacity:.7;transform:scale(1.5)}}
+/* 6 rotate ring 回転リング */
+.fx-rotate .fx-el{width:calc(var(--micsize)*1.4);height:calc(var(--micsize)*1.4);
+  border-radius:50%;border:4px dashed var(--mic);opacity:.5;animation:spin 4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* 7 sparkle スパークル */
+.fx-sparkle .fx-el{width:10px;height:10px;background:var(--mic);
+  clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);
+  animation:sparkle 1.4s ease-in-out infinite}
+@keyframes sparkle{0%,100%{transform:scale(.3) rotate(0);opacity:.2}50%{transform:scale(1.2) rotate(90deg);opacity:1}}
+/* 8 orbit 周回ドット */
+.fx-orbit .fx-el{width:calc(var(--micsize)*1.3);height:calc(var(--micsize)*1.3);
+  animation:spin 3s linear infinite}
+.fx-orbit .fx-el::before{content:"";position:absolute;top:-7px;left:50%;width:14px;height:14px;
+  margin-left:-7px;border-radius:50%;background:var(--mic);box-shadow:0 0 12px var(--mic)}
+/* 9 concentric 拡散円 */
+.fx-concentric .fx-el{width:40px;height:40px;border-radius:50%;background:var(--mic);
+  opacity:.15;animation:concentric 2s ease-out infinite}
+.fx-concentric .fx-el:nth-child(2){animation-delay:.6s}
+.fx-concentric .fx-el:nth-child(3){animation-delay:1.2s}
+@keyframes concentric{0%{transform:scale(.5);opacity:.4}100%{transform:scale(4);opacity:0}}
+/* 10 aurora オーロラ帯 */
+.fx-aurora .fx-el{width:calc(var(--micsize)*2);height:calc(var(--micsize)*2);border-radius:45%;
+  background:conic-gradient(from 0deg,var(--mic),transparent,var(--brand2),transparent,var(--mic));
+  filter:blur(20px);opacity:.3;animation:spin 6s linear infinite}
+
+/* エフェクトは録音中だけ animation を動かす（プレビュー時は .fx-run で起動） */
+.fx-layer .fx-el{animation-play-state:paused}
+.fx-run .fx-el,.fx-layer.fx-run .fx-el{animation-play-state:running}
+
+/* ================= 10テーマ ================= */
+[data-theme="rg"]{--bg1:#fdeaea;--bg2:#e7f3e9;--panel:#fff;--ink:#2a2320;--sub:#7a6f68;
+  --brand:#e3350d;--brand2:#3aa856;--line:#f0dcd8;--accent:#ffcb05;--mic:#e3350d}
+[data-theme="gs"]{--bg1:#fbf3dc;--bg2:#eef0f3;--panel:#fffdf7;--ink:#3a3320;--sub:#8a7d5a;
+  --brand:#d4af37;--brand2:#9aa4ad;--line:#efe4c4;--accent:#d4af37;--mic:#c9a227}
+[data-theme="rs"]{--bg1:#fde9ea;--bg2:#e6ecfb;--panel:#fff;--ink:#20233a;--sub:#6a6f8a;
+  --brand:#a5122a;--brand2:#1f5fbf;--line:#e6d8dc;--accent:#f2c14e;--mic:#c62839}
+[data-theme="dp"]{--bg1:#eef4fb;--bg2:#fbeef6;--panel:#fff;--ink:#2a2a3a;--sub:#7a7a8a;
+  --brand:#4f79c4;--brand2:#e79ac0;--line:#e2e6f0;--accent:#cfe0f5;--mic:#5b8dd9}
+[data-theme="bw"]{--bg1:#f4f5f7;--bg2:#e7e9ee;--panel:#fff;--ink:#1a1a1e;--sub:#666;
+  --brand:#111318;--brand2:#4a4f5a;--line:#dfe2e8;--accent:#d0d3da;--mic:#1a1c22}
+[data-theme="xy"]{--bg1:#e9f0fb;--bg2:#fbeaec;--panel:#fff;--ink:#1e2740;--sub:#6b7490;
+  --brand:#2b5fb0;--brand2:#d6243c;--line:#dde4f0;--accent:#8fd0e6;--mic:#2f6fd0}
+[data-theme="sm"]{--bg1:#fff0e0;--bg2:#f3e8fb;--panel:#fffaf5;--ink:#3a2a20;--sub:#8a7060;
+  --brand:#f08a24;--brand2:#7a4fb5;--line:#f6e2cd;--accent:#ffd28a;--mic:#f2841c}
+[data-theme="ss"]{--bg1:#e6f7f9;--bg2:#fbe9f4;--panel:#fff;--ink:#1e2e33;--sub:#5f7a80;
+  --brand:#00a0b0;--brand2:#d61f8c;--line:#d6eef1;--accent:#8be3ec;--mic:#00a5b5}
+[data-theme="sv"]{--bg1:#fdeae4;--bg2:#efe7fb;--panel:#fff;--ink:#33202a;--sub:#7a6070;
+  --brand:#e0453a;--brand2:#7d4fc4;--line:#f0dcd6;--accent:#f2b6a0;--mic:#e0453a}
+[data-theme="legends"]{--bg1:#eef1e6;--bg2:#f3ede0;--panel:#fbfaf4;--ink:#2e3320;--sub:#77805f;
+  --brand:#6b7a3a;--brand2:#b08a2e;--line:#e2e2d0;--accent:#d8c98a;--mic:#7a8a44}

@@ -1,0 +1,381 @@
+/* ===== コエワープ app.js ===== */
+'use strict';
+
+/* ---------- 選択肢の定義 ---------- */
+const THEMES = [
+  {id:'rg', name:'レッド&グリーン', cols:['#e3350d','#3aa856','#ffcb05']},
+  {id:'gs', name:'ゴールド&シルバー', cols:['#d4af37','#9aa4ad','#fffdf7']},
+  {id:'rs', name:'ルビー&サファイア', cols:['#a5122a','#1f5fbf','#f2c14e']},
+  {id:'dp', name:'ダイヤ&パール', cols:['#5b8dd9','#e79ac0','#eaf1fb']},
+  {id:'bw', name:'ブラック&ホワイト', cols:['#1a1c22','#e7e9ee','#4a4f5a']},
+  {id:'xy', name:'エックス&ワイ', cols:['#2f6fd0','#d6243c','#8fd0e6']},
+  {id:'sm', name:'サン&ムーン', cols:['#f2841c','#7a4fb5','#ffd28a']},
+  {id:'ss', name:'ソード&シールド', cols:['#00a5b5','#d61f8c','#8be3ec']},
+  {id:'sv', name:'スカーレット&バイオレット', cols:['#e0453a','#7d4fc4','#f2b6a0']},
+  {id:'legends', name:'レジェンズ', cols:['#7a8a44','#b08a2e','#d8c98a']},
+];
+const SHAPES = [
+  {id:'circle',name:'まる'},{id:'round',name:'角丸'},{id:'squircle',name:'たまご'},
+  {id:'pill',name:'ピル'},{id:'hexagon',name:'六角'},{id:'octagon',name:'八角'},
+  {id:'diamond',name:'ひし形'},{id:'shield',name:'シールド'},
+  {id:'burst',name:'バースト'},{id:'ring',name:'リング'},
+];
+const COLORS = ['#e3350d','#3b4cca','#f2841c','#00a5b5','#7d4fc4',
+                '#3aa856','#d61f8c','#d4af37','#1a1c22','#e0453a'];
+const SIZES = [90,105,120,135,150,168,186,205,228,255]; // px, 10段階
+const EFFECTS = [
+  {id:'ripple',name:'波紋',n:3},{id:'wave',name:'波線',n:1},{id:'pulse',name:'同心円',n:1},
+  {id:'bars',name:'音量バー',n:7},{id:'glow',name:'グロー',n:1},{id:'rotate',name:'回転リング',n:1},
+  {id:'sparkle',name:'スパークル',n:8},{id:'orbit',name:'周回ドット',n:1},
+  {id:'concentric',name:'拡散円',n:3},{id:'aurora',name:'オーロラ',n:1},
+];
+
+/* ---------- 既定設定 ---------- */
+const DEFAULT = {t:'rg', s:'circle', c:0, z:4, f:'ripple', u:'', ti:'コエワープ'};
+
+/* ---------- ユーティリティ ---------- */
+const $ = (id)=>document.getElementById(id);
+function encodeCfg(c){ return btoa(unescape(encodeURIComponent(JSON.stringify(c)))).replace(/=+$/,''); }
+function decodeCfg(s){ try{ return JSON.parse(decodeURIComponent(escape(atob(s)))); }catch(e){ return null; } }
+
+/* ================================================================
+   ルーティング：#r=... があれば録音画面，なければ設定画面
+================================================================ */
+function getHashCfg(){
+  const m = location.hash.match(/[#&]r=([^&]+)/);
+  return m ? decodeCfg(m[1]) : null;
+}
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  const rec = getHashCfg();
+  if(rec){ initRecorder(rec); }
+  else { initSettings(); }
+});
+
+/* ================================================================
+   設定画面
+================================================================ */
+function initSettings(){
+  const cfg = Object.assign({}, DEFAULT, loadLocal());
+
+  // 記録先URL
+  const driveUrl = $('driveUrl');
+  driveUrl.value = cfg.u || '';
+  updateDriveStatus();
+  driveUrl.addEventListener('input', ()=>{ cfg.u = driveUrl.value.trim(); updateDriveStatus(); saveLocal(cfg); });
+
+  function updateDriveStatus(){
+    const v = driveUrl.value.trim();
+    const st = $('driveStatus');
+    if(!v){ st.textContent='未設定 — URLを貼り付けてください'; st.className='drive-status'; }
+    else if(/^https?:\/\//.test(v)){ st.textContent='✔ 記録先を設定しました'; st.className='drive-status ok'; }
+    else { st.textContent='⚠ URLの形式が正しくありません'; st.className='drive-status'; }
+  }
+
+  $('setupToggle').addEventListener('click',(e)=>{ e.preventDefault();
+    const g=$('setupGuide'); g.hidden=!g.hidden; });
+
+  // ---- チップ生成 ----
+  buildThemeRow(cfg);
+  buildShapeRow(cfg);
+  buildColorRow(cfg);
+  buildSizeRow(cfg);
+  buildFxRow(cfg);
+
+  applyPreview(cfg);
+
+  // エフェクト試し
+  $('fxTest').addEventListener('click', ()=>{ runFxOnce($('fxLayer')); });
+  $('previewMic').addEventListener('click', ()=>{ runFxOnce($('fxLayer')); });
+
+  // 共有URL発行
+  $('publishBtn').addEventListener('click', ()=>publish(cfg));
+  $('copyBtn').addEventListener('click', ()=>{
+    const s=$('shareUrl'); s.select(); doCopy(s.value); $('shareMsg').textContent='コピーしました！';
+  });
+
+  // 各種セレクタ変更時に反映
+  window.__cfg = cfg;
+}
+
+function buildThemeRow(cfg){
+  const row=$('themeRow'); row.innerHTML='';
+  THEMES.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='chip theme-chip'+(cfg.t===t.id?' sel':'');
+    b.innerHTML=`<div class="tswatch">${t.cols.map(c=>`<i style="background:${c}"></i>`).join('')}</div>${t.name}`;
+    b.onclick=()=>{ cfg.t=t.id; sel(row,b); applyPreview(cfg); saveLocal(cfg); };
+    row.appendChild(b);
+  });
+}
+function buildShapeRow(cfg){
+  const row=$('shapeRow'); row.innerHTML='';
+  SHAPES.forEach(s=>{
+    const b=document.createElement('button');
+    b.className='chip'+(cfg.s===s.id?' sel':'');
+    b.textContent=s.name;
+    b.onclick=()=>{ cfg.s=s.id; sel(row,b); applyPreview(cfg); saveLocal(cfg); };
+    row.appendChild(b);
+  });
+}
+function buildColorRow(cfg){
+  const row=$('colorRow'); row.innerHTML='';
+  COLORS.forEach((c,i)=>{
+    const b=document.createElement('button');
+    b.className='chip'+(cfg.c===i?' sel':'');
+    b.style.background=c;
+    b.onclick=()=>{ cfg.c=i; sel(row,b); applyPreview(cfg); saveLocal(cfg); };
+    row.appendChild(b);
+  });
+}
+function buildSizeRow(cfg){
+  const row=$('sizeRow'); row.innerHTML='';
+  SIZES.forEach((z,i)=>{
+    const b=document.createElement('button');
+    b.className='chip'+(cfg.z===i?' sel':'');
+    b.innerHTML=`${i+1}<small>${z}px</small>`;
+    b.onclick=()=>{ cfg.z=i; sel(row,b); applyPreview(cfg); saveLocal(cfg); };
+    row.appendChild(b);
+  });
+}
+function buildFxRow(cfg){
+  const row=$('fxRow'); row.innerHTML='';
+  EFFECTS.forEach(f=>{
+    const b=document.createElement('button');
+    b.className='chip'+(cfg.f===f.id?' sel':'');
+    b.textContent=f.name;
+    b.onclick=()=>{ cfg.f=f.id; sel(row,b); applyPreview(cfg); saveLocal(cfg); runFxOnce($('fxLayer')); };
+    row.appendChild(b);
+  });
+}
+function sel(row,btn){ [...row.children].forEach(c=>c.classList.remove('sel')); btn.classList.add('sel'); }
+
+/* プレビュー反映 */
+function applyPreview(cfg){
+  const root=document.body;
+  root.setAttribute('data-theme', cfg.t);
+  const stage=$('preview');
+  applyMicVisual(stage, cfg);
+  buildFxLayer($('fxLayer'), cfg.f);
+}
+/* マイクの見た目（形・色・大きさ）を要素へ適用 */
+function applyMicVisual(scope, cfg){
+  const size=SIZES[cfg.z]||150;
+  const color=COLORS[cfg.c]||COLORS[0];
+  scope.style.setProperty('--micsize', size+'px');
+  scope.style.setProperty('--mic', color);
+  const mic=scope.querySelector('.mic-btn');
+  if(mic){
+    SHAPES.forEach(s=>mic.classList.remove('shape-'+s.id));
+    mic.classList.add('shape-'+cfg.s);
+  }
+}
+/* エフェクト要素をレイヤーに構築 */
+function buildFxLayer(layer, fxId){
+  const fx=EFFECTS.find(e=>e.id===fxId)||EFFECTS[0];
+  layer.className='fx-layer fx-'+fx.id;
+  layer.innerHTML='';
+  const n = fx.id==='bars'? 9 : (fx.id==='sparkle'?8:fx.n);
+  for(let i=0;i<n;i++){
+    const el=document.createElement('div'); el.className='fx-el';
+    if(fx.id==='sparkle'||fx.id==='bars'){
+      // 散らす／並べる
+      if(fx.id==='sparkle'){ el.style.left=(15+Math.random()*70)+'%'; el.style.top=(15+Math.random()*70)+'%'; el.style.animationDelay=(Math.random()).toFixed(2)+'s'; }
+      if(fx.id==='bars'){ el.style.animationDelay=(i*0.08).toFixed(2)+'s'; }
+    }
+    layer.appendChild(el);
+  }
+  return layer;
+}
+/* エフェクトを一定時間だけ再生（プレビュー用） */
+function runFxOnce(layer){
+  layer.classList.add('fx-run');
+  const mic=layer.parentElement.querySelector('.mic-btn');
+  if(mic) mic.classList.add('recording');
+  clearTimeout(layer.__t);
+  layer.__t=setTimeout(()=>{ layer.classList.remove('fx-run'); if(mic) mic.classList.remove('recording'); }, 2600);
+}
+
+/* 共有URL発行 */
+function publish(cfg){
+  if(!cfg.u || !/^https?:\/\//.test(cfg.u)){
+    $('shareMsg').textContent='⚠ 先にSTEP1で記録先URLを設定してください';
+    $('driveCard').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  const payload={t:cfg.t,s:cfg.s,c:cfg.c,z:cfg.z,f:cfg.f,u:cfg.u,ti:cfg.ti||'コエワープ'};
+  const url=location.origin+location.pathname+'#r='+encodeCfg(payload);
+  const out=$('shareOut'); out.hidden=false;
+  $('shareUrl').value=url;
+  doCopy(url);
+  $('shareMsg').textContent='✅ 共有URLを発行し，クリップボードにコピーしました！';
+}
+
+function doCopy(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).catch(()=>{}); }
+  else { const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); try{document.execCommand('copy');}catch(e){} t.remove(); }
+}
+
+/* localStorage 保存（作業中の設定を保持） */
+function saveLocal(cfg){ try{ localStorage.setItem('koewarp_cfg', JSON.stringify(cfg)); }catch(e){} }
+function loadLocal(){ try{ return JSON.parse(localStorage.getItem('koewarp_cfg'))||{}; }catch(e){ return {}; } }
+
+/* ================================================================
+   録音画面（共有リンク先）
+================================================================ */
+function initRecorder(cfg){
+  $('settings').hidden=true;
+  $('recorder').hidden=false;
+  document.body.setAttribute('data-theme', cfg.t||'rg');
+  $('recTitle').textContent = cfg.ti || 'コエワープ';
+
+  const stage=document.querySelector('.rec-stage');
+  applyMicVisual(stage, cfg);
+  buildFxLayer($('recFxLayer'), cfg.f);
+
+  const mic=$('recMic');
+  const status=$('recStatus');
+  const timerEl=$('recTimer');
+  const fxLayer=$('recFxLayer');
+
+  let state='idle'; // idle | recording | processing
+  let mediaRecorder=null, chunks=[], stream=null;
+  let audioCtx=null, analyser=null, rafId=null;
+  let startTime=0, timerId=null;
+
+  mic.addEventListener('click', async ()=>{
+    if(state==='idle'){ await startRec(); }
+    else if(state==='recording'){ stopRec(); }
+  });
+
+  async function startRec(){
+    if(!cfg.u){ setStatus('記録先が未設定です','err'); return; }
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    }catch(e){ setStatus('マイクの使用が許可されませんでした','err'); return; }
+
+    chunks=[];
+    const mime = pickMime();
+    mediaRecorder = mime ? new MediaRecorder(stream,{mimeType:mime}) : new MediaRecorder(stream);
+    mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
+    mediaRecorder.onstop=onStop;
+    mediaRecorder.start();
+
+    state='recording';
+    mic.classList.add('recording');
+    fxLayer.classList.add('fx-run');
+    setStatus('録音中… もう一度押すと停止','busy');
+    startTimer();
+  }
+
+  function stopRec(){
+    if(mediaRecorder && mediaRecorder.state!=='inactive'){ mediaRecorder.stop(); }
+    state='processing';
+    mic.classList.remove('recording');
+    fxLayer.classList.remove('fx-run');
+    stopTimer();
+    setStatus('MP3に変換しています…','busy');
+  }
+
+  async function onStop(){
+    try{
+      if(stream){ stream.getTracks().forEach(t=>t.stop()); }
+      const blob=new Blob(chunks,{type:chunks[0]?.type||'audio/webm'});
+      const mp3=await encodeToMp3(blob, setStatus);
+      setStatus('ドライブへ送信しています…','busy');
+      const name=($('recName').value.trim()||'コエワープ_'+tstamp());
+      await uploadMp3(cfg.u, mp3, name);
+      setStatus('✅ 保存が完了しました！ありがとうございました','done');
+      timerEl.hidden=true;
+      $('recName').value='';
+    }catch(err){
+      console.error(err);
+      setStatus('⚠ 送信に失敗しました：'+(err.message||err),'err');
+    }finally{
+      state='idle';
+    }
+  }
+
+  function startTimer(){
+    startTime=Date.now(); timerEl.hidden=false; timerEl.textContent='00:00';
+    timerId=setInterval(()=>{
+      const s=Math.floor((Date.now()-startTime)/1000);
+      timerEl.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+    },250);
+  }
+  function stopTimer(){ clearInterval(timerId); }
+  function setStatus(t,cls){ status.textContent=t; status.className='rec-status'+(cls?' '+cls:''); }
+}
+
+function pickMime(){
+  const cand=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg'];
+  for(const m of cand){ if(window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m; }
+  return '';
+}
+function tstamp(){ const d=new Date(); const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
+
+/* ---------- MP3エンコード（lamejs） ---------- */
+let _lame=null;
+async function loadLame(){
+  if(_lame) return _lame;
+  _lame=await import('https://cdn.jsdelivr.net/npm/@breezystack/lamejs@1.2.7/+esm');
+  return _lame;
+}
+async function encodeToMp3(blob, setStatus){
+  const lame=await loadLame();
+  const buf=await blob.arrayBuffer();
+  const AC=window.AudioContext||window.webkitAudioContext;
+  const ctx=new AC();
+  const audio=await ctx.decodeAudioData(buf);
+  const sampleRate=audio.sampleRate;
+  // モノラルにダウンミックス
+  const ch=audio.numberOfChannels;
+  const L=audio.getChannelData(0);
+  const R=ch>1?audio.getChannelData(1):null;
+  const len=L.length;
+  const mono=new Int16Array(len);
+  for(let i=0;i<len;i++){
+    let v=R?(L[i]+R[i])/2:L[i];
+    v=Math.max(-1,Math.min(1,v));
+    mono[i]=v<0?v*0x8000:v*0x7fff;
+  }
+  ctx.close();
+  const enc=new lame.Mp3Encoder(1, sampleRate, 128);
+  const block=1152; const out=[];
+  for(let i=0;i<mono.length;i+=block){
+    const slice=mono.subarray(i,i+block);
+    const mp3buf=enc.encodeBuffer(slice);
+    if(mp3buf.length>0) out.push(new Uint8Array(mp3buf));
+    if(setStatus && i%(block*200)===0){ setStatus(`MP3に変換中… ${Math.round(i/mono.length*100)}%`,'busy'); }
+  }
+  const end=enc.flush();
+  if(end.length>0) out.push(new Uint8Array(end));
+  return new Blob(out,{type:'audio/mpeg'});
+}
+
+/* ---------- アップロード（Google Apps Script受け取り口へ） ---------- */
+async function uploadMp3(endpoint, mp3Blob, name){
+  const b64=await blobToBase64(mp3Blob);
+  const body=JSON.stringify({ filename: sanitize(name)+'.mp3', mimeType:'audio/mpeg', data:b64 });
+  const res=await fetch(endpoint,{
+    method:'POST',
+    // text/plain にしてCORSプリフライトを回避（Apps Scriptの定石）
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body, redirect:'follow',
+  });
+  const txt=await res.text();
+  let json; try{ json=JSON.parse(txt); }catch(e){ json=null; }
+  if(json && json.ok===false){ throw new Error(json.error||'サーバーエラー'); }
+  if(!res.ok && !json){ throw new Error('HTTP '+res.status); }
+  return json;
+}
+function blobToBase64(blob){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(String(r.result).split(',')[1]);
+    r.onerror=reject;
+    r.readAsDataURL(blob);
+  });
+}
+function sanitize(n){ return n.replace(/[\\/:*?"<>|]/g,'_').slice(0,80)||'コエワープ'; }
