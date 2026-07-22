@@ -70,6 +70,8 @@ function initSettings(){
     const ok = /^https?:\/\//.test(v);
     dot.className = 'dot'+(ok?' ok':'');
     dot.title = ok ? '記録先を設定しました' : '未設定';
+    const tl = $('testLink');
+    if(ok){ tl.hidden=false; tl.href=v; } else { tl.hidden=true; }
   }
 
   $('setupToggle').addEventListener('click',(e)=>{ e.preventDefault();
@@ -236,6 +238,9 @@ function initRecorder(cfg){
 
   async function startRec(){
     if(!cfg.u){ setStatus('記録先が未設定です','err'); return; }
+    if(/\/dev(\?|$)/.test(cfg.u) || /\/edit(\?|$)/.test(cfg.u)){
+      setStatus('⚠ 記録先URLが正しくありません（末尾が /exec のURLを使ってください）','err'); return;
+    }
     try{
       stream=await navigator.mediaDevices.getUserMedia({audio:true});
     }catch(e){ setStatus('マイクの使用が許可されませんでした','err'); return; }
@@ -271,7 +276,7 @@ function initRecorder(cfg){
       setStatus('ドライブへ送信しています…','busy');
       const name=($('recName').value.trim()||'コエワープ_'+tstamp());
       await uploadMp3(cfg.u, mp3, name);
-      setStatus('✅ 保存が完了しました！ありがとうございました','done');
+      setStatus('✅ 送信しました！ありがとうございました','done');
       timerEl.hidden=true;
       $('recName').value='';
     }catch(err){
@@ -340,21 +345,21 @@ async function encodeToMp3(blob, setStatus){
   return new Blob(out,{type:'audio/mpeg'});
 }
 
-/* ---------- アップロード（Google Apps Script受け取り口へ） ---------- */
+/* ---------- アップロード（Google Apps Script受け取り口へ） ----------
+   Apps Scriptの /exec は応答時に googleusercontent.com へ302リダイレクトするため，
+   通常のfetch(cors)ではレスポンスを読めず "Failed to fetch" になる。
+   no-cors で送信すると，レスポンスは読めないが保存自体は確実に行われる。 */
 async function uploadMp3(endpoint, mp3Blob, name){
   const b64=await blobToBase64(mp3Blob);
   const body=JSON.stringify({ filename: sanitize(name)+'.mp3', mimeType:'audio/mpeg', data:b64 });
-  const res=await fetch(endpoint,{
+  await fetch(endpoint,{
     method:'POST',
-    // text/plain にしてCORSプリフライトを回避（Apps Scriptの定石）
+    mode:'no-cors',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body, redirect:'follow',
+    body,
+    redirect:'follow',
   });
-  const txt=await res.text();
-  let json; try{ json=JSON.parse(txt); }catch(e){ json=null; }
-  if(json && json.ok===false){ throw new Error(json.error||'サーバーエラー'); }
-  if(!res.ok && !json){ throw new Error('HTTP '+res.status); }
-  return json;
+  return { ok:true };
 }
 function blobToBase64(blob){
   return new Promise((resolve,reject)=>{

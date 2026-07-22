@@ -28,6 +28,8 @@
         <span class="dot" id="driveDot" title="未設定"></span>
       </div>
 
+      <a class="test-link" id="testLink" href="#" target="_blank" rel="noopener" hidden>🔍 記録先の接続テスト</a>
+
       <!-- 共有URL発行 -->
       <button class="publish-btn" id="publishBtn" type="button">🔗 共有URLを発行</button>
       <div class="share-out" id="shareOut" hidden>
@@ -85,6 +87,15 @@
             <b>このページ上部の記録先欄</b>に貼り付ければ完了！
           </li>
         </ol>
+        <div class="sg-trouble">
+          <b>⚠ 送信に失敗するとき</b>
+          <ul class="sg-ul">
+            <li>記録先URLの末尾が <code>/exec</code> になっているか（<code>/dev</code> や <code>/edit</code> はNG）</li>
+            <li>デプロイの「アクセスできるユーザー」が <b>全員</b> になっているか</li>
+            <li>コードを直したら，再度<b>「デプロイ」→「デプロイを管理」→ 鉛筆✏ → バージョン「新しいバージョン」→ デプロイ</b>で更新</li>
+            <li>上の「🔍 接続テスト」を押して「正常に動いています」と表示されればOK</li>
+          </ul>
+        </div>
       </div>
     </section>
 
