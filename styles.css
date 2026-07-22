@@ -47,10 +47,27 @@ body{
 .dot.ok{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2)}
 
 /* 使い方 */
-.setup-guide{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
-.setup-guide ol{margin:0;padding-left:18px;font-size:12px;line-height:1.8;color:var(--sub)}
-.setup-guide code{background:#eef1f7;padding:1px 5px;border-radius:5px;font-size:11px}
+.setup-guide{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.setup-guide code{background:#eef1f7;padding:1px 5px;border-radius:5px;font-size:11px;word-break:break-all}
 .setup-guide a{color:var(--brand2);font-weight:700}
+.sg-head{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:6px}
+.sg-steps{margin:0;padding-left:20px;font-size:12.5px;line-height:1.85;color:var(--ink)}
+.sg-steps>li{margin-bottom:12px}
+.sg-steps b{color:var(--brand)}
+.sg-sub{font-size:11px;color:var(--sub);margin-top:3px}
+.sg-note{font-size:11px;color:var(--sub);margin-left:6px}
+.sg-ul{margin:5px 0 0;padding-left:16px;color:var(--sub);line-height:1.7}
+.sg-ul li{margin-bottom:2px}
+.sg-ul b{color:var(--ink)}
+#folderUrl{width:100%;margin-top:6px;padding:9px 10px;font-size:13px;border:1.5px solid var(--line);
+  border-radius:9px;outline:none;background:#fff;color:#111}
+#folderUrl:focus{border-color:var(--brand)}
+.sg-status{font-size:11.5px;font-weight:700;color:var(--sub);margin-top:4px}
+.sg-status.ok{color:#1a9e4b}
+.sg-status.ng{color:#c0392b}
+.sg-copy{margin-top:4px;background:var(--brand2);color:#fff;border:none;border-radius:9px;
+  padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer}
+.sg-copy:active{transform:scale(.98)}
 
 /* セレクタ行（プルダウン） */
 .ctl{display:flex;align-items:center;gap:8px}

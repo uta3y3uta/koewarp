@@ -45,11 +45,45 @@
 
       <!-- 使い方（初期は隠す） -->
       <div class="setup-guide" id="setupGuide" hidden>
-        <ol>
-          <li><a href="https://script.google.com/home" target="_blank" rel="noopener">script.google.com</a> で新規プロジェクト作成</li>
-          <li><code>gas/Code.gs</code> を貼り，<code>FOLDER_ID</code> に保存先フォルダIDを入力</li>
-          <li>デプロイ →「ウェブアプリ」→ アクセス「全員」で公開</li>
-          <li>発行された <code>…/exec</code> のURLを上の欄へ貼り付け</li>
+        <div class="sg-head">📖 受け取り口の作り方（初回だけ・約5分）</div>
+        <ol class="sg-steps">
+          <li>
+            <b>保存先フォルダを用意する</b><br>
+            <a href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener">Googleドライブ</a>で音声をためるフォルダを作成（または既存のを開く）。
+            そのフォルダを開いた状態の<b>ブラウザのURL</b>をコピーします。
+            <div class="sg-sub">例：<code>drive.google.com/drive/folders/<b>1AbC…XyZ</b></code> ← 末尾がフォルダID</div>
+          </li>
+          <li>
+            <b>フォルダURLをここに貼り付ける</b>
+            <input type="text" id="folderUrl" placeholder="フォルダのURLを貼り付け" />
+            <div class="sg-status" id="folderStatus">未入力</div>
+          </li>
+          <li>
+            <b>コードをコピーする</b><br>
+            <button type="button" class="sg-copy" id="copyGas">📋 GASコードをコピー</button>
+            <span class="sg-note">フォルダIDが自動で埋め込まれます</span>
+          </li>
+          <li>
+            <b>Apps Scriptに貼り付ける</b><br>
+            <a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">Apps Scriptで新規プロジェクト</a>を開く →
+            画面の既存コード（<code>function myFunction…</code>）を選択して全部消す（<b>Ctrl+A →&nbsp;Delete</b>）→
+            <b>Ctrl+V</b>で貼り付け → <b>💾保存</b>（Ctrl+S）。
+          </li>
+          <li>
+            <b>デプロイして公開する</b>
+            <ul class="sg-ul">
+              <li>右上の青い<b>「デプロイ」→「新しいデプロイ」</b></li>
+              <li>左の⚙（歯車）→<b>「ウェブアプリ」</b>を選択</li>
+              <li>「次のユーザーとして実行」＝<b>自分</b></li>
+              <li>「アクセスできるユーザー」＝<b>全員</b> → <b>「デプロイ」</b></li>
+              <li>初回は承認画面が出ます：自分のアカウントを選択 →「詳細」→「（安全ではないページ）に移動」→「許可」</li>
+            </ul>
+          </li>
+          <li>
+            <b>URLを貼り付けて完成</b><br>
+            表示された「ウェブアプリ」のURL（末尾が<code>…/exec</code>）をコピーし，
+            <b>このページ上部の記録先欄</b>に貼り付ければ完了！
+          </li>
         </ol>
       </div>
     </section>

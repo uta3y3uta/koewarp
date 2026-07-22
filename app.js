@@ -75,6 +75,25 @@ function initSettings(){
   $('setupToggle').addEventListener('click',(e)=>{ e.preventDefault();
     const g=$('setupGuide'); g.hidden=!g.hidden; });
 
+  // ---- GAS設置ガイド：フォルダID自動埋め込み＋コードコピー ----
+  const folderUrl=$('folderUrl');
+  const folderStatus=$('folderStatus');
+  let folderId='';
+  folderUrl.addEventListener('input', ()=>{
+    folderId=extractFolderId(folderUrl.value.trim());
+    if(!folderUrl.value.trim()){ folderStatus.textContent='未入力'; folderStatus.className='sg-status'; }
+    else if(folderId){ folderStatus.textContent='✔ フォルダIDを認識：'+folderId; folderStatus.className='sg-status ok'; }
+    else { folderStatus.textContent='⚠ URLからフォルダIDを読み取れません'; folderStatus.className='sg-status ng'; }
+  });
+  $('copyGas').addEventListener('click', ()=>{
+    const id=folderId || '';
+    const code=GAS_TEMPLATE.replace('__FOLDER_ID__', id);
+    doCopy(code);
+    if(id){ $('copyGas').textContent='✅ コピーしました！Apps Scriptに貼り付けてください'; }
+    else { $('copyGas').textContent='📋 コピーしました（フォルダID未設定→マイドライブ直下に保存されます）'; }
+    setTimeout(()=>{ $('copyGas').textContent='📋 GASコードをコピー'; }, 4000);
+  });
+
   // ---- プルダウン生成 ----
   buildSelects(cfg);
 
@@ -346,3 +365,46 @@ function blobToBase64(blob){
   });
 }
 function sanitize(n){ return n.replace(/[\\/:*?"<>|]/g,'_').slice(0,80)||'コエワープ'; }
+
+/* フォルダURL/IDからフォルダIDを取り出す */
+function extractFolderId(v){
+  if(!v) return '';
+  let m=v.match(/\/folders\/([a-zA-Z0-9_-]{10,})/);          // …/folders/ID
+  if(m) return m[1];
+  m=v.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);                   // …?id=ID
+  if(m) return m[1];
+  if(/^[a-zA-Z0-9_-]{20,}$/.test(v)) return v;                // ID直貼り
+  return '';
+}
+
+/* Apps Scriptに貼り付けるコード（__FOLDER_ID__ は自動置換） */
+const GAS_TEMPLATE = `/**
+ * コエワープ 受け取り口（このコードをそのまま貼り付けてください）
+ */
+var FOLDER_ID = '__FOLDER_ID__';
+
+function doPost(e) {
+  try {
+    var body = JSON.parse(e.postData.contents);
+    var filename = (body.filename || 'コエワープ.mp3').toString();
+    var mimeType = body.mimeType || 'audio/mpeg';
+    var bytes = Utilities.base64Decode(body.data);
+    var blob = Utilities.newBlob(bytes, mimeType, filename);
+    var folder = FOLDER_ID ? DriveApp.getFolderById(FOLDER_ID) : DriveApp.getRootFolder();
+    var file = folder.createFile(blob);
+    return json({ ok: true, id: file.getId(), name: file.getName(), url: file.getUrl() });
+  } catch (err) {
+    return json({ ok: false, error: String(err) });
+  }
+}
+
+function doGet() {
+  return ContentService.createTextOutput('コエワープ 受け取り口は正常に動いています。')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+function json(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+`;
