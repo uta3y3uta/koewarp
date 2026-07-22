@@ -1,4 +1,4 @@
-/* ===== コエワープ app.js ===== */
+/* ===== コエワ～プ app.js ===== */
 'use strict';
 
 /* ---------- 選択肢の定義 ---------- */
@@ -31,7 +31,7 @@ const EFFECTS = [
 ];
 
 /* ---------- 既定設定 ---------- */
-const DEFAULT = {t:'gs', s:'circle', c:7, z:4, f:'pulse', u:'', ti:'コエワープ'};
+const DEFAULT = {t:'gs', s:'circle', c:7, z:4, f:'pulse', u:'', ti:'コエワ～プ'};
 
 /* ---------- ユーティリティ ---------- */
 const $ = (id)=>document.getElementById(id);
@@ -57,6 +57,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
 ================================================================ */
 function initSettings(){
   const cfg = Object.assign({}, DEFAULT, loadLocal());
+  cfg.ti = DEFAULT.ti; // タイトルは固定（旧localStorageの名前を引き継がない）
 
   // 記録先URL
   const driveUrl = $('driveUrl');
@@ -260,7 +261,7 @@ function publish(cfg){
     $('driveCard').scrollIntoView({behavior:'smooth'});
     return;
   }
-  const payload={t:cfg.t,s:cfg.s,c:cfg.c,z:cfg.z,f:cfg.f,u:cfg.u,ti:cfg.ti||'コエワープ'};
+  const payload={t:cfg.t,s:cfg.s,c:cfg.c,z:cfg.z,f:cfg.f,u:cfg.u,ti:cfg.ti||'コエワ～プ'};
   const url=location.origin+location.pathname+'#r='+encodeCfg(payload);
   const out=$('shareOut'); out.hidden=false;
   $('shareUrl').value=url;
@@ -284,7 +285,7 @@ function initRecorder(cfg){
   $('settings').hidden=true;
   $('recorder').hidden=false;
   document.body.setAttribute('data-theme', cfg.t||'rg');
-  $('recTitle').textContent = cfg.ti || 'コエワープ';
+  $('recTitle').textContent = cfg.ti || 'コエワ～プ';
 
   const stage=document.querySelector('.rec-stage');
   applyMicVisual(stage, cfg);
@@ -314,7 +315,7 @@ function initRecorder(cfg){
 
   // データ名のあとに自動タイムスタンプ：例）山田太郎_感想audio20260723_154210
   function nameNow(){
-    const base = $('recName').value.trim() || 'コエワープ';
+    const base = $('recName').value.trim() || 'コエワ～プ';
     return sanitize(base) + 'audio' + tstamp();
   }
   function pad2(n){ return String(n).padStart(2,'0'); }
@@ -466,7 +467,7 @@ function blobToBase64(blob){
     r.readAsDataURL(blob);
   });
 }
-function sanitize(n){ return n.replace(/[\\/:*?"<>|]/g,'_').slice(0,80)||'コエワープ'; }
+function sanitize(n){ return n.replace(/[\\/:*?"<>|]/g,'_').slice(0,80)||'コエワ～プ'; }
 
 /* フォルダURL/IDからフォルダIDを取り出す */
 function extractFolderId(v){
@@ -481,14 +482,14 @@ function extractFolderId(v){
 
 /* Apps Scriptに貼り付けるコード（__FOLDER_ID__ は自動置換） */
 const GAS_TEMPLATE = `/**
- * コエワープ 受け取り口（このコードをそのまま貼り付けてください）
+ * コエワ～プ 受け取り口（このコードをそのまま貼り付けてください）
  */
 var FOLDER_ID = '__FOLDER_ID__';
 
 function doPost(e) {
   try {
     var body = JSON.parse(e.postData.contents);
-    var filename = (body.filename || 'コエワープ.mp3').toString();
+    var filename = (body.filename || 'コエワ～プ.mp3').toString();
     var mimeType = body.mimeType || 'audio/mpeg';
     var bytes = Utilities.base64Decode(body.data);
     var blob = Utilities.newBlob(bytes, mimeType, filename);
@@ -501,7 +502,7 @@ function doPost(e) {
 }
 
 function doGet() {
-  return ContentService.createTextOutput('コエワープ 受け取り口は正常に動いています。')
+  return ContentService.createTextOutput('コエワ～プ 受け取り口は正常に動いています。')
     .setMimeType(ContentService.MimeType.TEXT);
 }
 
