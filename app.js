@@ -31,7 +31,7 @@ const EFFECTS = [
 ];
 
 /* ---------- 既定設定 ---------- */
-const DEFAULT = {t:'rg', s:'circle', c:0, z:4, f:'ripple', u:'', ti:'コエワープ'};
+const DEFAULT = {t:'gs', s:'circle', c:7, z:4, f:'pulse', u:'', ti:'コエワープ'};
 
 /* ---------- ユーティリティ ---------- */
 const $ = (id)=>document.getElementById(id);
@@ -96,8 +96,8 @@ function initSettings(){
     setTimeout(()=>{ $('copyGas').textContent='📋 GASコードをコピー'; }, 4000);
   });
 
-  // ---- プルダウン生成 ----
-  buildSelects(cfg);
+  // ---- ビジュアルピッカー生成 ----
+  buildPickers(cfg);
 
   applyPreview(cfg);
 
@@ -117,25 +117,109 @@ function initSettings(){
 const COLOR_NAMES=['レッド','ブルー','オレンジ','ティール','パープル','グリーン','マゼンタ','ゴールド','ブラック','コーラル'];
 const FX_GLYPH={ripple:'◎',wave:'〜',pulse:'⊙',bars:'▮',glow:'✺',rotate:'↻',sparkle:'✦',orbit:'◍',concentric:'◉',aurora:'≋'};
 
-function opt(value,label,selected){
-  const o=document.createElement('option');
-  o.value=value; o.textContent=label; if(selected) o.selected=true; return o;
+/* ---- ビジュアルピッカー：普段は畳まれ，タップで展開して見た目から選ぶ ---- */
+const PICKERS=[
+  {kind:'theme', ic:'🎨'},
+  {kind:'shape', ic:'🎙️'},
+  {kind:'color', ic:'🌈'},
+  {kind:'size',  ic:'📏'},
+  {kind:'fx',    ic:'✨'},
+];
+function pkItems(kind){
+  if(kind==='theme') return THEMES.map(t=>({v:t.id,label:t.name}));
+  if(kind==='shape') return SHAPES.map(s=>({v:s.id,label:s.name}));
+  if(kind==='color') return COLORS.map((c,i)=>({v:i,label:COLOR_NAMES[i]}));
+  if(kind==='size')  return SIZES.map((z,i)=>({v:i,label:'大きさ'+(i+1)}));
+  return EFFECTS.map(f=>({v:f.id,label:f.name}));
 }
-function buildSelects(cfg){
-  const ts=$('themeSel'), ss=$('shapeSel'), cs=$('colorSel'), zs=$('sizeSel'), fs=$('fxSel');
-  ts.innerHTML=''; ss.innerHTML=''; cs.innerHTML=''; zs.innerHTML=''; fs.innerHTML='';
+function pkGet(kind,cfg){
+  return kind==='theme'?cfg.t:kind==='shape'?cfg.s:kind==='color'?cfg.c:kind==='size'?cfg.z:cfg.f;
+}
+function pkSet(kind,cfg,v){
+  if(kind==='theme')cfg.t=v; else if(kind==='shape')cfg.s=v;
+  else if(kind==='color')cfg.c=+v; else if(kind==='size')cfg.z=+v; else cfg.f=v;
+}
+function pkLabel(kind,v){
+  const it=pkItems(kind).find(x=>String(x.v)===String(v));
+  return it?it.label:'';
+}
+function pkSwatch(kind,v){
+  const el=document.createElement('span');
+  if(kind==='theme'){
+    el.className='sw-theme';
+    const t=THEMES.find(x=>x.id===v)||THEMES[0];
+    t.cols.forEach(c=>{ const i=document.createElement('i'); i.style.background=c; el.appendChild(i); });
+  } else if(kind==='shape'){
+    el.className='sw-shape shaped shape-'+v;
+  } else if(kind==='color'){
+    el.className='sw-color'; el.style.background=COLORS[+v]||COLORS[0];
+  } else if(kind==='size'){
+    el.className='sw-size'; const d=8+(+v)*2; el.style.width=d+'px'; el.style.height=d+'px';
+  } else {
+    el.className='sw-fx'; el.textContent=FX_GLYPH[v]||'✨';
+  }
+  return el;
+}
+function closeAllPickers(except){
+  document.querySelectorAll('.picker.open').forEach(el=>{
+    if(el===except) return;
+    el.classList.remove('open');
+    const g=el.querySelector('.picker-grid'); if(g) g.hidden=true;
+  });
+}
+function makePicker(p, cfg){
+  const kind=p.kind;
+  const wrap=document.createElement('div'); wrap.className='picker'; wrap.dataset.kind=kind;
+  const head=document.createElement('button'); head.type='button'; head.className='picker-head';
+  const grid=document.createElement('div'); grid.className='picker-grid'; grid.hidden=true;
 
-  THEMES.forEach(t=> ts.appendChild(opt(t.id, '🎨 '+t.name, cfg.t===t.id)));
-  SHAPES.forEach(s=> ss.appendChild(opt(s.id, '🎙 '+s.name, cfg.s===s.id)));
-  COLORS.forEach((c,i)=> cs.appendChild(opt(i, '● '+COLOR_NAMES[i], cfg.c===i)));
-  SIZES.forEach((z,i)=> zs.appendChild(opt(i, '大きさ '+(i+1), cfg.z===i)));
-  EFFECTS.forEach(f=> fs.appendChild(opt(f.id, (FX_GLYPH[f.id]||'✨')+' '+f.name, cfg.f===f.id)));
+  function renderHead(){
+    const v=pkGet(kind,cfg);
+    head.innerHTML='';
+    const ic=document.createElement('span'); ic.className='ph-ic'; ic.textContent=p.ic;
+    const val=document.createElement('span'); val.className='ph-val';
+    const mini=document.createElement('span'); mini.className='ph-mini'; mini.appendChild(pkSwatch(kind,v));
+    const nm=document.createElement('span'); nm.className='ph-name'; nm.textContent=pkLabel(kind,v);
+    val.appendChild(mini); val.appendChild(nm);
+    const car=document.createElement('span'); car.className='ph-caret'; car.textContent='▾';
+    head.append(ic,val,car);
+  }
+  function renderGrid(){
+    grid.innerHTML='';
+    const cur=pkGet(kind,cfg);
+    pkItems(kind).forEach(it=>{
+      const b=document.createElement('button'); b.type='button'; b.className='swatch'; b.title=it.label;
+      if(String(it.v)===String(cur)) b.classList.add('on');
+      b.appendChild(pkSwatch(kind,it.v));
+      b.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        pkSet(kind,cfg,it.v);
+        grid.querySelectorAll('.swatch.on').forEach(x=>x.classList.remove('on'));
+        b.classList.add('on');
+        renderHead();
+        applyPreview(cfg); saveLocal(cfg);
+        runFxOnce($('fxLayer'));   // 選ぶたびに変化をプレビュー再生
+      });
+      grid.appendChild(b);
+    });
+  }
+  head.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    const willOpen=!wrap.classList.contains('open');
+    closeAllPickers();
+    if(willOpen){ wrap.classList.add('open'); grid.hidden=false; }
+  });
 
-  ts.onchange=()=>{ cfg.t=ts.value; applyPreview(cfg); saveLocal(cfg); };
-  ss.onchange=()=>{ cfg.s=ss.value; applyPreview(cfg); saveLocal(cfg); };
-  cs.onchange=()=>{ cfg.c=+cs.value; applyPreview(cfg); saveLocal(cfg); };
-  zs.onchange=()=>{ cfg.z=+zs.value; applyPreview(cfg); saveLocal(cfg); };
-  fs.onchange=()=>{ cfg.f=fs.value; applyPreview(cfg); saveLocal(cfg); runFxOnce($('fxLayer')); };
+  renderHead(); renderGrid();
+  wrap.append(head,grid);
+  return wrap;
+}
+function buildPickers(cfg){
+  const host=$('pickers'); host.innerHTML='';
+  PICKERS.forEach(p=> host.appendChild(makePicker(p,cfg)));
+  document.addEventListener('click',(e)=>{
+    if(!e.target.closest('.picker')) closeAllPickers();
+  });
 }
 
 /* プレビュー反映 */
@@ -243,7 +327,11 @@ function initRecorder(cfg){
     else if(state==='recording'){ await stopRec(); }
   });
 
-  function nameNow(){ return sanitize($('recName').value.trim() || ('コエワープ_'+tstamp())); }
+  // データ名のあとに自動タイムスタンプ：例）山田太郎_感想audio20260723_154210
+  function nameNow(){
+    const base = $('recName').value.trim() || 'コエワープ';
+    return sanitize(base) + 'audio' + tstamp();
+  }
   function pad2(n){ return String(n).padStart(2,'0'); }
   function newEncoder(){ enc=new lame.Mp3Encoder(1, sampleRate, KBPS); mp3Parts=[]; segSamples=0; }
   function floatToInt16(f){
