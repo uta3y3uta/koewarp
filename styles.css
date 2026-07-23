@@ -153,7 +153,8 @@ body{
 .chip .shaped.shape-ring{border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 4px currentColor}
 
 /* ---- share ---- */
-.publish-btn{width:100%;font-size:16px;font-weight:800;color:#fff;border:none;cursor:pointer;
+.publish-row{display:flex;gap:8px;align-items:stretch}
+.publish-btn{flex:1;min-width:0;font-size:16px;font-weight:800;color:#fff;border:none;cursor:pointer;
   padding:15px;border-radius:14px;letter-spacing:.03em;
   background:linear-gradient(120deg,var(--brand),var(--brand2));
   box-shadow:0 8px 20px rgba(59,76,202,.25);transition:transform .12s,filter .2s}
@@ -167,8 +168,8 @@ body{
 .share-msg{min-height:16px;font-size:12px;color:var(--brand2);font-weight:700;margin:0;text-align:center}
 
 /* ---- 共有URL履歴 ---- */
-.hist-btn{align-self:flex-end;width:46px;height:40px;padding:0;border:1.5px solid var(--line);
-  border-radius:11px;background:#fff;font-size:21px;line-height:1;cursor:pointer;
+.hist-btn{flex:0 0 auto;width:58px;padding:0;border:1.5px solid var(--line);
+  border-radius:14px;background:#fff;font-size:24px;line-height:1;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   transition:background .15s,border-color .15s,transform .12s}
 .hist-btn:hover{border-color:var(--brand2)}

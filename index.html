@@ -28,17 +28,18 @@
 
       <a class="test-link" id="testLink" href="#" target="_blank" rel="noopener" hidden>🔍 記録先の接続テスト</a>
 
-      <!-- 共有URL発行 -->
-      <button class="publish-btn" id="publishBtn" type="button">🔗 共有URLを発行</button>
+      <!-- 共有URL発行（右隣に履歴🕘） -->
+      <div class="publish-row">
+        <button class="publish-btn" id="publishBtn" type="button">🔗 共有URLを発行</button>
+        <button class="hist-btn" id="histToggle" type="button" aria-label="共有URLの履歴" title="共有URLの履歴">🕘</button>
+      </div>
+      <!-- 共有URL履歴パネル（各端末のローカル保存・最大30件） -->
+      <div class="hist-panel" id="histPanel" hidden></div>
       <div class="share-out" id="shareOut" hidden>
         <input type="text" id="shareUrl" readonly />
         <button id="copyBtn" type="button" aria-label="コピー">📋</button>
       </div>
       <p class="share-msg" id="shareMsg"></p>
-
-      <!-- 共有URL履歴（各端末のローカル保存・最大30件） -->
-      <button class="hist-btn" id="histToggle" type="button" aria-label="共有URLの履歴" title="共有URLの履歴">🕘</button>
-      <div class="hist-panel" id="histPanel" hidden></div>
 
       <!-- ビジュアルピッカー群（タップで展開して選ぶ） -->
       <div class="pickers" id="pickers"></div>
