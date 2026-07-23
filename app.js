@@ -5,14 +5,14 @@
 const THEMES = [
   {id:'rg', name:'レッド&グリーン', cols:['#e3350d','#3aa856','#ffcb05']},
   {id:'gs', name:'ゴールド&シルバー', cols:['#d4af37','#9aa4ad','#fffdf7']},
-  {id:'rs', name:'ルビー&サファイア', cols:['#a5122a','#1f5fbf','#f2c14e']},
-  {id:'dp', name:'ダイヤ&パール', cols:['#5b8dd9','#e79ac0','#eaf1fb']},
+  {id:'rs', name:'チェリー&コバルト', cols:['#a5122a','#1f5fbf','#f2c14e']},
+  {id:'dp', name:'アクア&ピーチ', cols:['#5b8dd9','#e79ac0','#eaf1fb']},
   {id:'bw', name:'ブラック&ホワイト', cols:['#1a1c22','#e7e9ee','#4a4f5a']},
-  {id:'xy', name:'エックス&ワイ', cols:['#2f6fd0','#d6243c','#8fd0e6']},
-  {id:'sm', name:'サン&ムーン', cols:['#f2841c','#7a4fb5','#ffd28a']},
-  {id:'ss', name:'ソード&シールド', cols:['#00a5b5','#d61f8c','#8be3ec']},
-  {id:'sv', name:'スカーレット&バイオレット', cols:['#e0453a','#7d4fc4','#f2b6a0']},
-  {id:'legends', name:'レジェンズ', cols:['#7a8a44','#b08a2e','#d8c98a']},
+  {id:'xy', name:'セルリアン&クリムゾン', cols:['#2f6fd0','#d6243c','#8fd0e6']},
+  {id:'sm', name:'アプリコット&グレープ', cols:['#f2841c','#7a4fb5','#ffd28a']},
+  {id:'ss', name:'ミント&ローズ', cols:['#00a5b5','#d61f8c','#8be3ec']},
+  {id:'sv', name:'トマト&プラム', cols:['#e0453a','#7d4fc4','#f2b6a0']},
+  {id:'legends', name:'オリーブ&カーキ', cols:['#7a8a44','#b08a2e','#d8c98a']},
 ];
 const SHAPES = [
   {id:'circle',name:'まる'},{id:'round',name:'角丸'},{id:'squircle',name:'たまご'},
