@@ -110,6 +110,17 @@ function initSettings(){
     const s=$('shareUrl'); s.select(); doCopy(s.value); $('shareMsg').textContent='コピーしました！';
   });
 
+  // 共有URL履歴（開閉）
+  const histToggle=$('histToggle');
+  if(histToggle){
+    histToggle.addEventListener('click', ()=>{
+      const p=$('histPanel'); p.hidden=!p.hidden;
+      histToggle.classList.toggle('open', !p.hidden);
+      if(!p.hidden) renderHistory();
+    });
+  }
+  renderHistory();
+
   // 各種セレクタ変更時に反映
   window.__cfg = cfg;
 }
@@ -262,12 +273,74 @@ function publish(cfg){
     $('driveCard').scrollIntoView({behavior:'smooth'});
     return;
   }
-  const payload={t:cfg.t,s:cfg.s,c:cfg.c,z:cfg.z,f:cfg.f,u:cfg.u,ti:cfg.ti||'コエワ～プ'};
+  const k=makeShareId();
+  const payload={t:cfg.t,s:cfg.s,c:cfg.c,z:cfg.z,f:cfg.f,u:cfg.u,ti:cfg.ti||'コエワ～プ',k};
   const url=location.origin+location.pathname+'#r='+encodeCfg(payload);
   const out=$('shareOut'); out.hidden=false;
   $('shareUrl').value=url;
   doCopy(url);
   $('shareMsg').textContent='✅ 共有URLを発行し，クリップボードにコピーしました！';
+  addHistory({k, u:cfg.u, url, ts:Date.now(), enabled:true});
+  renderHistory();
+}
+
+/* 共有URLごとの固有ID（オン・オフ管理用） */
+function makeShareId(){
+  const s='abcdefghijklmnopqrstuvwxyz0123456789';
+  let r=''; for(let i=0;i<10;i++){ r+=s[Math.floor(Math.random()*s.length)]; }
+  return r;
+}
+
+/* ===== 共有URL履歴（各端末のローカル保存・最大30件） ===== */
+const HISTORY_KEY='koewarp_history';
+function loadHistory(){ try{ return JSON.parse(localStorage.getItem(HISTORY_KEY))||[]; }catch(e){ return []; } }
+function saveHistory(a){ try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(a.slice(0,30))); }catch(e){} }
+function addHistory(entry){ const a=loadHistory().filter(x=>x.k!==entry.k); a.unshift(entry); saveHistory(a); }
+function fmtHistDate(ts){ const d=new Date(ts); const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+
+function setShareEnabled(k, enabled){
+  const a=loadHistory(); const i=a.findIndex(x=>x.k===k);
+  if(i<0) return;
+  a[i].enabled=enabled; saveHistory(a);
+  const u=a[i].u;
+  if(u && /^https?:\/\//.test(u)){
+    fetch(u,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'setEnabled',k,enabled})}).catch(()=>{});
+  }
+}
+
+function renderHistory(){
+  const panel=$('histPanel'); if(!panel) return;
+  const a=loadHistory();
+  if(a.length===0){ panel.innerHTML='<div class="hist-empty">まだ履歴はありません。共有URLを発行すると，ここに最大30件まで記録されます。</div>'; return; }
+  panel.innerHTML=a.map(e=>`
+    <div class="hist-row" data-k="${e.k}">
+      <div class="hist-info">
+        <div class="hist-date">${fmtHistDate(e.ts)}</div>
+        <div class="hist-url" title="${e.url}">${e.url}</div>
+      </div>
+      <div class="hist-acts">
+        <label class="hist-sw"><input type="checkbox" class="hist-en" ${e.enabled!==false?'checked':''}><span>送信</span></label>
+        <button type="button" class="hist-open">開く</button>
+        <button type="button" class="hist-copy">コピー</button>
+        <button type="button" class="hist-del" aria-label="削除">🗑</button>
+      </div>
+    </div>`).join('');
+  panel.querySelectorAll('.hist-row').forEach(row=>{
+    const k=row.getAttribute('data-k');
+    const e=a.find(x=>x.k===k);
+    row.querySelector('.hist-en').addEventListener('change',ev=>{
+      const on=ev.target.checked; setShareEnabled(k,on);
+      row.classList.toggle('off',!on);
+    });
+    row.classList.toggle('off', e.enabled===false);
+    row.querySelector('.hist-open').addEventListener('click',()=>{ window.open(e.url,'_blank','noopener'); });
+    row.querySelector('.hist-copy').addEventListener('click',()=>{ doCopy(e.url); });
+    row.querySelector('.hist-del').addEventListener('click',()=>{
+      const arr=loadHistory().filter(x=>x.k!==k); saveHistory(arr); renderHistory();
+    });
+  });
 }
 
 function doCopy(text){
@@ -347,7 +420,7 @@ function initRecorder(cfg){
     let name;
     if(isFinal && partNo===0){ name=baseName; }
     else { partNo++; name=baseName+'_'+pad2(partNo); }
-    uploads.push(uploadMp3(cfg.u, blob, name));
+    uploads.push(uploadMp3(cfg.u, blob, name, cfg.k));
     if(!isFinal){ setStatus('パート'+partNo+'を送信中…（録音は継続中）','busy'); newEncoder(); }
   }
 
@@ -450,9 +523,11 @@ async function loadLame(){
    Apps Scriptの /exec は応答時に googleusercontent.com へ302リダイレクトするため，
    通常のfetch(cors)ではレスポンスを読めず "Failed to fetch" になる。
    no-cors で送信すると，レスポンスは読めないが保存自体は確実に行われる。 */
-async function uploadMp3(endpoint, mp3Blob, name){
+async function uploadMp3(endpoint, mp3Blob, name, k){
   const b64=await blobToBase64(mp3Blob);
-  const body=JSON.stringify({ filename: sanitize(name)+'.mp3', mimeType:'audio/mpeg', data:b64 });
+  const payload={ filename: sanitize(name)+'.mp3', mimeType:'audio/mpeg', data:b64 };
+  if(k) payload.k=k;
+  const body=JSON.stringify(payload);
   await fetch(endpoint,{
     method:'POST',
     mode:'no-cors',
@@ -492,11 +567,41 @@ var FOLDER_ID = '__FOLDER_ID__';
 function doPost(e) {
   try {
     var body = JSON.parse(e.postData.contents);
+
+    // 共有URLのオン・オフ切り替え（発行者だけが操作）
+    if (body.action === 'setEnabled') {
+      var props = PropertiesService.getScriptProperties();
+      var list = JSON.parse(props.getProperty('disabled') || '[]');
+      var key = String(body.k || '');
+      if (body.enabled) {
+        list = list.filter(function (x) { return x !== key; });
+      } else if (key && list.indexOf(key) < 0) {
+        list.push(key);
+      }
+      props.setProperty('disabled', JSON.stringify(list));
+      return json({ ok: true, disabled: !body.enabled });
+    }
+
+    // オフにされた共有URLからの送信は保存しない
+    var k = String(body.k || '');
+    if (k) {
+      var dis = JSON.parse(PropertiesService.getScriptProperties().getProperty('disabled') || '[]');
+      if (dis.indexOf(k) >= 0) {
+        return json({ ok: false, skipped: true, reason: 'disabled' });
+      }
+    }
+
     var filename = (body.filename || 'コエワ～プ.mp3').toString();
     var mimeType = body.mimeType || 'audio/mpeg';
     var bytes = Utilities.base64Decode(body.data);
     var blob = Utilities.newBlob(bytes, mimeType, filename);
-    var folder = FOLDER_ID ? DriveApp.getFolderById(FOLDER_ID) : DriveApp.getRootFolder();
+
+    // 保存先：記録先フォルダ内に「当日の日付(yyyyMMdd)」フォルダを自動作成
+    var parent = FOLDER_ID ? DriveApp.getFolderById(FOLDER_ID) : DriveApp.getRootFolder();
+    var dayName = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyyMMdd');
+    var it = parent.getFoldersByName(dayName);
+    var folder = it.hasNext() ? it.next() : parent.createFolder(dayName);
+
     var file = folder.createFile(blob);
     return json({ ok: true, id: file.getId(), name: file.getName(), url: file.getUrl() });
   } catch (err) {
