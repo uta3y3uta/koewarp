@@ -314,10 +314,12 @@ function initRecorder(cfg){
     else if(state==='recording'){ await stopRec(); }
   });
 
-  // データ名のあとに自動タイムスタンプ：例）山田太郎_感想audio20260723_154210
+  // ファイル名＝データ名＋日付時刻＋audio（例）山田太郎_感想20260723_154210audio
+  // データ名が空なら日付時刻audio（例）20260723_154210audio
   function nameNow(){
-    const base = $('recName').value.trim() || 'コエワ～プ';
-    return sanitize(base) + 'audio' + tstamp();
+    const raw = $('recName').value.trim();
+    const base = raw ? sanitize(raw) : '';
+    return base + tstamp() + 'audio';
   }
   function pad2(n){ return String(n).padStart(2,'0'); }
   function newEncoder(){ enc=new lame.Mp3Encoder(1, sampleRate, KBPS); mp3Parts=[]; segSamples=0; }
