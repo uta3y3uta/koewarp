@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>コエワ～プ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+P+One&display=swap" rel="stylesheet" />
+<style>
+/* ===== コエワープ styles ===== */
+:root{
+  /* テーマで上書きされる変数 */
+  --bg1:#f6f7fb; --bg2:#e9edf6; --panel:#ffffff; --ink:#1d2330; --sub:#5a6473;
+  --brand:#e3350d; --brand2:#3b4cca; --line:#e3e7ef; --accent:#ffcb05;
+  --mic:#e3350d; --micsize:150px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",-apple-system,"Segoe UI",sans-serif;
+  color:var(--ink);
+  background:linear-gradient(160deg,var(--bg1),var(--bg2));
+  min-height:100vh;
+  transition:background .4s;
+}
+.screen{max-width:920px;margin:0 auto;padding:14px 16px 24px}
+[hidden]{display:none !important}
+
+/* ---- header ---- */
+/* アプリ名：初代ポケットモンスターのロゴを意識した丸ゴシック＋縁取り。
+   文字色はテーマ（--brand）に連動し，縁取りは濃色（--ink）で変化する */
+.app-title{font-family:"Mochiy Pop P One","M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif;
+  font-weight:400;font-size:34px;line-height:1.1;text-align:center;margin:0 0 4px;letter-spacing:.02em;
+  color:var(--brand);-webkit-text-fill-color:var(--brand);
+  -webkit-text-stroke:3.5px var(--ink);paint-order:stroke fill;
+  text-shadow:0 3px 0 rgba(0,0,0,.22),0 5px 7px rgba(0,0,0,.16);
+  transition:color .3s}
+
+/* ---- 2カラム studio ---- */
+.studio{display:grid;grid-template-columns:minmax(0,320px) 1fr;gap:18px;align-items:stretch}
+@media(max-width:680px){.studio{grid-template-columns:1fr}}
+
+.controls{display:flex;flex-direction:column;gap:12px}
+
+/* URL入力 */
+.url-field{position:relative;display:flex;align-items:center;gap:8px;
+  background:var(--panel);border:2px solid var(--brand);border-radius:14px;padding:10px 12px;
+  box-shadow:0 6px 18px rgba(227,53,13,.15)}
+.url-field input{flex:1;border:none;outline:none;background:transparent;font-size:15px;color:#111;min-width:0}
+.help-btn{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line);
+  background:#fff;color:var(--sub);font-weight:800;cursor:pointer;flex:none}
+.test-link{font-size:12px;color:var(--brand2);font-weight:700;text-decoration:none;
+  align-self:flex-start;margin-top:-4px}
+.test-link:hover{text-decoration:underline}
+
+/* 使い方（？で全幅の下方に展開・横長レイアウト） */
+.setup-guide{margin-top:16px;background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:16px 20px}
+@media(min-width:640px){
+  .setup-guide .sg-steps{column-count:2;column-gap:34px}
+  .setup-guide .sg-steps>li{break-inside:avoid;-webkit-column-break-inside:avoid}
+}
+.setup-guide code{background:#eef1f7;padding:1px 5px;border-radius:5px;font-size:11px;word-break:break-all}
+.setup-guide a{color:var(--brand2);font-weight:700}
+.sg-head{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:6px}
+.sg-steps{margin:0;padding-left:20px;font-size:12.5px;line-height:1.85;color:var(--ink)}
+.sg-steps>li{margin-bottom:12px}
+.sg-steps b{color:var(--brand)}
+.sg-sub{font-size:11px;color:var(--sub);margin-top:3px}
+.sg-note{font-size:11px;color:var(--sub);margin-left:6px}
+@counter-style sg-circled{system:fixed;symbols:"①" "②" "③" "④" "⑤" "⑥" "⑦" "⑧" "⑨";suffix:" "}
+.sg-ol{margin:5px 0 0;padding-left:20px;color:var(--sub);line-height:1.7;list-style:sg-circled}
+.sg-ol li{margin-bottom:2px}
+.sg-ol b{color:var(--ink)}
+#folderUrl{width:100%;margin-top:6px;padding:9px 10px;font-size:13px;border:1.5px solid var(--line);
+  border-radius:9px;outline:none;background:#fff;color:#111}
+#folderUrl:focus{border-color:var(--brand)}
+.sg-status{font-size:11.5px;font-weight:700;color:var(--sub);margin-top:4px}
+.sg-status.ok{color:#1a9e4b}
+.sg-status.ng{color:#c0392b}
+.sg-copy{margin-top:4px;background:var(--brand2);color:#fff;border:none;border-radius:9px;
+  padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer}
+.sg-copy:active{transform:scale(.98)}
+.sg-trouble{margin-top:10px;padding:10px 12px;background:#fff8ec;border:1px solid var(--accent);
+  border-radius:10px;font-size:12px;color:var(--ink)}
+.sg-trouble>b{color:#c0392b}
+
+/* ===== ビジュアルピッカー（正方形アイコン＋押すと下に見本展開） ===== */
+.pickers{display:flex;flex-direction:column;gap:0}
+/* 正方形アイコンを横一列に */
+.picker-bar{display:flex;gap:8px}
+.picker-head{flex:1;aspect-ratio:1/1;min-width:0;display:flex;align-items:center;justify-content:center;
+  padding:0;cursor:pointer;background:var(--panel);border:1.5px solid var(--line);border-radius:13px;
+  outline:none;transition:border-color .15s,box-shadow .15s,transform .1s}
+.picker-head:active{transform:scale(.94)}
+.picker-head.on{border-color:var(--brand);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 24%,transparent),0 4px 12px rgba(0,0,0,.10)}
+/* アイコン内の見本 */
+.picker-head .sw-theme{width:60%;height:42%}
+.picker-head .sw-shape{width:52%;height:52%}
+.picker-head .sw-color{width:52%;height:52%}
+.picker-head .sw-fx{font-size:24px}
+
+/* 展開グリッド（左カラム全幅・5列） */
+.picker-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
+  margin-top:10px;padding:11px;background:var(--panel);
+  border:1.5px solid var(--line);border-radius:12px;
+  animation:pkOpen .18s ease-out}
+@keyframes pkOpen{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.swatch{position:relative;display:flex;align-items:center;justify-content:center;
+  aspect-ratio:1/1;border:2px solid transparent;border-radius:12px;
+  background:linear-gradient(160deg,var(--bg1),var(--bg2));cursor:pointer;padding:0;
+  transition:transform .1s,border-color .12s,box-shadow .12s}
+.swatch:hover{border-color:var(--line)}
+.swatch:active{transform:scale(.9)}
+.swatch.on{border-color:var(--brand);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 26%,transparent)}
+
+/* 各種チップ描画 */
+.sw-theme{width:72%;height:64%;border-radius:7px;overflow:hidden;display:flex;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.sw-theme i{flex:1;display:block}
+.sw-shape{width:60%;height:60%;background:var(--sub)}
+.sw-shape.shaped.shape-ring{border-radius:50%;background:transparent;
+  box-shadow:0 0 0 2px #fff,0 0 0 5px var(--sub)}
+.sw-color{width:62%;height:62%;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.sw-size{background:var(--sub);border-radius:50%}
+.sw-fx{font-size:21px;line-height:1;color:var(--brand)}
+
+/* ---- 右：プレビュー ---- */
+.stage-wrap{position:relative;border-radius:20px;
+  background:linear-gradient(150deg,var(--bg1),var(--bg2));
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+  min-height:380px;overflow:hidden}
+.mic-stage{position:relative;width:100%;min-height:calc(var(--micsize) + 60px);
+  display:flex;align-items:center;justify-content:center}
+.fx-layer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;overflow:hidden}
+
+/* ---- mic button base ---- */
+.mic-btn{position:relative;z-index:2;width:var(--micsize);height:var(--micsize);
+  border:none;cursor:pointer;color:#fff;background:var(--mic);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 24px rgba(0,0,0,.22),inset 0 3px 8px rgba(255,255,255,.35);
+  transition:transform .12s,box-shadow .2s,border-radius .2s;border-radius:50%}
+.mic-btn:active{transform:scale(.94)}
+.mic-btn.recording{animation:micpulse 1.1s ease-in-out infinite}
+@keyframes micpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.mic-ic{width:44%;height:44%;fill:currentColor;filter:drop-shadow(0 2px 3px rgba(0,0,0,.2))}
+
+/* mic shapes (10) — .shaped を持つ要素へ直接適用（マイク本体・チップ両用） */
+.shaped.shape-circle  {border-radius:50%}
+.shaped.shape-round   {border-radius:26%}
+.shaped.shape-squircle{border-radius:38% / 42%}
+.shaped.shape-pill    {border-radius:50px}
+.shaped.shape-hexagon {border-radius:12%;clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%)}
+.shaped.shape-octagon {clip-path:polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%)}
+.shaped.shape-diamond {clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.shaped.shape-shield  {border-radius:44% 44% 50% 50%/60% 60% 100% 100%}
+.shaped.shape-burst   {clip-path:polygon(50% 0,61% 20%,83% 12%,79% 35%,100% 50%,79% 65%,83% 88%,61% 80%,50% 100%,39% 80%,17% 88%,21% 65%,0 50%,21% 35%,17% 12%,39% 20%)}
+.mic-btn.shaped.shape-ring{border-radius:50%;box-shadow:0 0 0 6px rgba(255,255,255,.7),0 0 0 11px var(--mic),0 10px 24px rgba(0,0,0,.25)}
+.chip .shaped.shape-ring{border-radius:50%;box-shadow:0 0 0 2px #fff,0 0 0 4px currentColor}
+
+/* ---- share ---- */
+.publish-row{display:flex;gap:8px;align-items:stretch}
+.publish-btn{flex:1;min-width:0;font-size:16px;font-weight:800;color:#fff;border:none;cursor:pointer;
+  padding:15px;border-radius:14px;letter-spacing:.03em;
+  background:linear-gradient(120deg,var(--brand),var(--brand2));
+  box-shadow:0 8px 20px rgba(59,76,202,.25);transition:transform .12s,filter .2s}
+.publish-btn:hover{filter:brightness(1.05)}
+.publish-btn:active{transform:scale(.98)}
+.share-out{display:flex;gap:6px}
+.share-out input{flex:1;padding:10px;border:1.5px solid var(--line);border-radius:10px;
+  font-size:12px;background:#f7f9fc;color:#333;min-width:0}
+.share-out button{padding:0 14px;border:none;border-radius:10px;background:var(--brand2);
+  color:#fff;font-size:16px;cursor:pointer}
+.share-msg{min-height:16px;font-size:12px;color:var(--brand2);font-weight:700;margin:0;text-align:center}
+
+/* ---- 共有URL履歴 ---- */
+.hist-btn{flex:0 0 auto;width:58px;padding:0;border:1.5px solid var(--line);
+  border-radius:14px;background:#fff;font-size:24px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s,border-color .15s,transform .12s}
+.hist-btn:hover{border-color:var(--brand2)}
+.hist-btn:active{transform:scale(.96)}
+.hist-btn.open{background:var(--sub);border-color:var(--sub)}
+.hist-panel{margin-top:8px;display:flex;flex-direction:column;gap:8px;
+  max-height:280px;overflow-y:auto;padding:2px}
+.hist-empty{font-size:11.5px;color:var(--sub);line-height:1.6;padding:6px 2px}
+.hist-row{border:1.5px solid var(--line);border-radius:11px;padding:8px 10px;background:#fff;
+  display:flex;flex-direction:column;gap:6px;transition:opacity .15s}
+.hist-row.off{opacity:.55;background:#f6f6f6}
+.hist-info{min-width:0}
+.hist-date{font-size:11.5px;font-weight:700;color:var(--brand2)}
+.hist-url{font-size:10.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-acts{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.hist-sw{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:var(--ink);cursor:pointer}
+.hist-sw input{width:15px;height:15px;accent-color:var(--brand);cursor:pointer}
+.hist-acts button{padding:5px 10px;border:1.5px solid var(--line);border-radius:9px;
+  background:#fff;color:var(--ink);font-size:11.5px;font-weight:700;cursor:pointer}
+.hist-acts button:hover{border-color:var(--brand2);color:var(--brand2)}
+.hist-acts .hist-del{margin-left:auto;padding:5px 9px}
+.hist-acts .hist-del:hover{border-color:#c0392b;color:#c0392b}
+
+/* ================= 録音画面 ================= */
+#recorder{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.rec-wrap{width:100%;max-width:460px;text-align:center;padding:20px}
+.rec-title{font-size:24px;font-weight:800;margin:0 0 20px;
+  background:linear-gradient(90deg,var(--brand),var(--brand2));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.rec-name{width:100%;font-size:16px;padding:14px;border-radius:12px;
+  border:2px solid var(--line);outline:none;margin-bottom:10px;text-align:center;
+  background:#fff;color:#111}
+.rec-name:focus{border-color:var(--brand)}
+.rec-stage{height:calc(var(--micsize) + 120px)}
+.rec-status{font-size:14px;color:var(--sub);margin-top:6px;min-height:20px;font-weight:600}
+.rec-status.busy{color:var(--brand2)}
+.rec-status.done{color:#1a9e4b;font-weight:800}
+.rec-status.err{color:#c0392b}
+.rec-timer{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;
+  color:var(--brand);margin-top:6px;letter-spacing:.05em}
+
+/* ================= エフェクト（10種） ================= */
+.fx-el{position:absolute;pointer-events:none}
+/* 1 ripple 波紋 */
+.fx-ripple .fx-el{width:var(--micsize);height:var(--micsize);border-radius:50%;
+  border:3px solid var(--mic);animation:ripple 1.6s ease-out infinite}
+.fx-ripple .fx-el:nth-child(2){animation-delay:.5s}
+.fx-ripple .fx-el:nth-child(3){animation-delay:1s}
+@keyframes ripple{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.1);opacity:0}}
+/* 2 wave 波線 */
+.fx-wave .fx-el{width:calc(var(--micsize)*1.8);height:60px;
+  background:radial-gradient(circle,var(--mic) 2px,transparent 3px) 0 0/16px 16px;
+  opacity:.4;animation:wavemove 1.2s linear infinite}
+@keyframes wavemove{to{background-position:16px 0}}
+/* 3 pulse rings 同心円 */
+.fx-pulse .fx-el{width:var(--micsize);height:var(--micsize);border-radius:50%;
+  box-shadow:0 0 0 0 var(--mic);animation:pulsering 1.8s ease-out infinite;opacity:.6}
+@keyframes pulsering{0%{box-shadow:0 0 0 0 var(--mic)}100%{box-shadow:0 0 0 70px transparent}}
+/* 4 bars 音量バー（マイク下部に等化器として表示・前面） */
+.fx-layer.fx-bars{gap:6px;align-items:flex-end;padding-bottom:11%;z-index:3}
+.fx-bars .fx-el{position:relative;width:9px;height:18px;border-radius:6px;background:var(--mic);
+  box-shadow:0 2px 6px rgba(0,0,0,.15);animation:bars .8s ease-in-out infinite}
+@keyframes bars{0%,100%{height:16px;opacity:.55}50%{height:78px;opacity:1}}
+/* 5 glow グロー（マイクを囲む発光ハロー） */
+.fx-glow .fx-el{width:calc(var(--micsize)*1.55);height:calc(var(--micsize)*1.55);border-radius:50%;
+  background:radial-gradient(circle,var(--mic) 30%,transparent 72%);filter:blur(14px);
+  animation:glow 1.5s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:.85;transform:scale(1.85)}}
+/* 6 rotate ring 回転リング */
+.fx-rotate .fx-el{width:calc(var(--micsize)*1.4);height:calc(var(--micsize)*1.4);
+  border-radius:50%;border:4px dashed var(--mic);opacity:.5;animation:spin 4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* 7 sparkle スパークル */
+.fx-sparkle .fx-el{width:10px;height:10px;background:var(--mic);
+  clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);
+  animation:sparkle 1.4s ease-in-out infinite}
+@keyframes sparkle{0%,100%{transform:scale(.3) rotate(0);opacity:.2}50%{transform:scale(1.2) rotate(90deg);opacity:1}}
+/* 8 orbit 周回ドット */
+.fx-orbit .fx-el{width:calc(var(--micsize)*1.3);height:calc(var(--micsize)*1.3);
+  animation:spin 3s linear infinite}
+.fx-orbit .fx-el::before{content:"";position:absolute;top:-7px;left:50%;width:14px;height:14px;
+  margin-left:-7px;border-radius:50%;background:var(--mic);box-shadow:0 0 12px var(--mic)}
+/* 9 concentric 拡散円（マイクから広がるソナー状の輪） */
+.fx-concentric .fx-el{width:calc(var(--micsize)*0.9);height:calc(var(--micsize)*0.9);border-radius:50%;
+  border:5px solid var(--mic);background:transparent;opacity:0;
+  animation:concentric 1.9s ease-out infinite}
+.fx-concentric .fx-el:nth-child(2){animation-delay:.63s}
+.fx-concentric .fx-el:nth-child(3){animation-delay:1.26s}
+@keyframes concentric{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.6);opacity:0}}
+/* 10 aurora オーロラ帯 */
+.fx-aurora .fx-el{width:calc(var(--micsize)*2);height:calc(var(--micsize)*2);border-radius:45%;
+  background:conic-gradient(from 0deg,var(--mic),transparent,var(--brand2),transparent,var(--mic));
+  filter:blur(20px);opacity:.3;animation:spin 6s linear infinite}
+
+/* エフェクトは録音中だけ animation を動かす（プレビュー時は .fx-run で起動） */
+.fx-layer .fx-el{animation-play-state:paused}
+.fx-run .fx-el,.fx-layer.fx-run .fx-el{animation-play-state:running}
+
+/* ================= 10テーマ ================= */
+[data-theme="rg"]{--bg1:#fdeaea;--bg2:#e7f3e9;--panel:#fff;--ink:#2a2320;--sub:#7a6f68;
+  --brand:#e3350d;--brand2:#3aa856;--line:#f0dcd8;--accent:#ffcb05;--mic:#e3350d}
+[data-theme="gs"]{--bg1:#fbf3dc;--bg2:#eef0f3;--panel:#fffdf7;--ink:#3a3320;--sub:#8a7d5a;
+  --brand:#d4af37;--brand2:#9aa4ad;--line:#efe4c4;--accent:#d4af37;--mic:#c9a227}
+[data-theme="rs"]{--bg1:#fde9ea;--bg2:#e6ecfb;--panel:#fff;--ink:#20233a;--sub:#6a6f8a;
+  --brand:#a5122a;--brand2:#1f5fbf;--line:#e6d8dc;--accent:#f2c14e;--mic:#c62839}
+[data-theme="dp"]{--bg1:#eef4fb;--bg2:#fbeef6;--panel:#fff;--ink:#2a2a3a;--sub:#7a7a8a;
+  --brand:#4f79c4;--brand2:#e79ac0;--line:#e2e6f0;--accent:#cfe0f5;--mic:#5b8dd9}
+[data-theme="bw"]{--bg1:#f4f5f7;--bg2:#e7e9ee;--panel:#fff;--ink:#1a1a1e;--sub:#666;
+  --brand:#111318;--brand2:#4a4f5a;--line:#dfe2e8;--accent:#d0d3da;--mic:#1a1c22}
+[data-theme="xy"]{--bg1:#e9f0fb;--bg2:#fbeaec;--panel:#fff;--ink:#1e2740;--sub:#6b7490;
+  --brand:#2b5fb0;--brand2:#d6243c;--line:#dde4f0;--accent:#8fd0e6;--mic:#2f6fd0}
+[data-theme="sm"]{--bg1:#fff0e0;--bg2:#f3e8fb;--panel:#fffaf5;--ink:#3a2a20;--sub:#8a7060;
+  --brand:#f08a24;--brand2:#7a4fb5;--line:#f6e2cd;--accent:#ffd28a;--mic:#f2841c}
+[data-theme="ss"]{--bg1:#e6f7f9;--bg2:#fbe9f4;--panel:#fff;--ink:#1e2e33;--sub:#5f7a80;
+  --brand:#00a0b0;--brand2:#d61f8c;--line:#d6eef1;--accent:#8be3ec;--mic:#00a5b5}
+[data-theme="sv"]{--bg1:#fdeae4;--bg2:#efe7fb;--panel:#fff;--ink:#33202a;--sub:#7a6070;
+  --brand:#e0453a;--brand2:#7d4fc4;--line:#f0dcd6;--accent:#f2b6a0;--mic:#e0453a}
+[data-theme="legends"]{--bg1:#eef1e6;--bg2:#f3ede0;--panel:#fbfaf4;--ink:#2e3320;--sub:#77805f;
+  --brand:#6b7a3a;--brand2:#b08a2e;--line:#e2e2d0;--accent:#d8c98a;--mic:#7a8a44}
+
+</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E🎙️%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+
+<!-- ========== 設定画面 ========== -->
+<main id="settings" class="screen">
+  <div class="studio">
+    <!-- 左：記録先URL・共有発行・各種セレクタ -->
+    <section class="controls">
+      <h1 class="app-title">コエワ～プ</h1>
+
+      <!-- 記録先URL -->
+      <div class="url-field" id="driveCard">
+        <input type="url" id="driveUrl" inputmode="url" autocomplete="off"
+          placeholder="記録先URLを貼り付け" />
+        <button class="help-btn" id="setupToggle" type="button" aria-label="使い方">?</button>
+      </div>
+
+      <a class="test-link" id="testLink" href="#" target="_blank" rel="noopener" hidden>🔍 記録先の接続テスト</a>
+
+      <!-- 共有URL発行（右隣に履歴🕘） -->
+      <div class="publish-row">
+        <button class="publish-btn" id="publishBtn" type="button">🔗 共有URLを発行</button>
+        <button class="hist-btn" id="histToggle" type="button" aria-label="共有URLの履歴" title="共有URLの履歴">🕘</button>
+      </div>
+      <!-- 共有URL履歴パネル（各端末のローカル保存・最大30件） -->
+      <div class="hist-panel" id="histPanel" hidden></div>
+      <div class="share-out" id="shareOut" hidden>
+        <input type="text" id="shareUrl" readonly />
+        <button id="copyBtn" type="button" aria-label="コピー">📋</button>
+      </div>
+      <p class="share-msg" id="shareMsg"></p>
+
+      <!-- ビジュアルピッカー群（タップで展開して選ぶ） -->
+      <div class="pickers" id="pickers"></div>
+    </section>
+
+    <!-- 右：プレビュー -->
+    <section class="stage-wrap" id="preview">
+      <div class="mic-stage">
+        <div class="fx-layer" id="fxLayer"></div>
+        <button class="mic-btn shaped" id="previewMic" type="button" aria-label="マイク">
+          <svg viewBox="0 0 24 24" class="mic-ic"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 1 0 2 0v-3.08A7 7 0 0 0 19 11z"/></svg>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 使い方（初期は隠す・？で全幅の下方に展開） -->
+  <div class="setup-guide" id="setupGuide">
+    <div class="sg-head">データ保存ドライブの設定のやり方（初回だけ・約3分）</div>
+    <ol class="sg-steps">
+      <li>
+        <b>保存先フォルダを用意する</b><br>
+        <a href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener">Googleドライブ</a>で音声をためるフォルダを作成。
+        そのフォルダの<b>共有URL</b>をコピーします。
+      </li>
+      <li>
+        <b>フォルダURLをここに貼り付ける</b>
+        <input type="text" id="folderUrl" placeholder="フォルダのURLを貼り付け" />
+        <div class="sg-status" id="folderStatus">未入力</div>
+      </li>
+      <li>
+        <b>コードをコピーする</b><br>
+        <button type="button" class="sg-copy" id="copyGas">GASコードをコピー</button>
+        <span class="sg-note">フォルダIDが自動で埋め込まれます</span>
+      </li>
+      <li>
+        <b>Apps Scriptに貼り付ける</b>
+        <ol class="sg-ol">
+          <li><a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">Apps Scriptで新規プロジェクト</a>を開く</li>
+          <li>画面の既存コード（<code>function myFunction…</code>）を全部消す（<b>Ctrl+A →&nbsp;Delete</b>）</li>
+          <li><b>Ctrl+V</b>で３のGASコードを貼り付け</li>
+          <li><b>💾保存</b></li>
+        </ol>
+      </li>
+      <li>
+        <b>デプロイして公開する</b>
+        <ol class="sg-ol">
+          <li>右上の青い<b>「デプロイ」→「新しいデプロイ」</b></li>
+          <li>左の⚙（歯車）→<b>「ウェブアプリ」</b>を選択</li>
+          <li>「次のユーザーとして実行」＝<b>自分</b></li>
+          <li>「アクセスできるユーザー」＝<b>全員</b> → <b>「デプロイ」</b></li>
+          <li>初回は承認画面が出ます。自分のアカウントを選択 →「詳細」→「（安全ではないページ）に移動」→「許可」</li>
+        </ol>
+      </li>
+      <li>
+        <b>URLを貼り付けて完成</b><br>
+        表示された「ウェブアプリ」のURL（末尾が<code>…/exec</code>）をコピーし，
+        <b>このページ上部の記録先欄</b>に貼り付け，共有URLを発行したら完了！
+      </li>
+    </ol>
+  </div>
+</main>
+
+<!-- ========== 録音画面（共有リンク先） ========== -->
+<main id="recorder" class="screen" hidden>
+  <div class="rec-wrap">
+    <h1 class="rec-title" id="recTitle">コエワ～プ</h1>
+    <input type="text" id="recName" class="rec-name" placeholder="データ名を入力" />
+    <div class="mic-stage rec-stage">
+      <div class="fx-layer" id="recFxLayer"></div>
+      <button class="mic-btn shaped" id="recMic" type="button" aria-label="録音">
+        <svg viewBox="0 0 24 24" class="mic-ic"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 1 0 2 0v-3.08A7 7 0 0 0 19 11z"/></svg>
+      </button>
+    </div>
+    <div class="rec-status" id="recStatus">マイクを押して録音を開始</div>
+    <div class="rec-timer" id="recTimer" hidden>00:00</div>
+  </div>
+</main>
+
+<script>
+/* ===== コエワ～プ app.js ===== */
+'use strict';
+
+/* ---------- 選択肢の定義 ---------- */
+const THEMES = [
+  {id:'rg', name:'レッド&グリーン', cols:['#e3350d','#3aa856','#ffcb05']},
+  {id:'gs', name:'ゴールド&シルバー', cols:['#d4af37','#9aa4ad','#fffdf7']},
+  {id:'rs', name:'チェリー&コバルト', cols:['#a5122a','#1f5fbf','#f2c14e']},
+  {id:'dp', name:'アクア&ピーチ', cols:['#5b8dd9','#e79ac0','#eaf1fb']},
+  {id:'bw', name:'ブラック&ホワイト', cols:['#1a1c22','#e7e9ee','#4a4f5a']},
+  {id:'xy', name:'セルリアン&クリムゾン', cols:['#2f6fd0','#d6243c','#8fd0e6']},
+  {id:'sm', name:'アプリコット&グレープ', cols:['#f2841c','#7a4fb5','#ffd28a']},
+  {id:'ss', name:'ミント&ローズ', cols:['#00a5b5','#d61f8c','#8be3ec']},
+  {id:'sv', name:'トマト&プラム', cols:['#e0453a','#7d4fc4','#f2b6a0']},
+  {id:'legends', name:'オリーブ&カーキ', cols:['#7a8a44','#b08a2e','#d8c98a']},
+];
+const SHAPES = [
+  {id:'circle',name:'まる'},{id:'round',name:'角丸'},{id:'squircle',name:'たまご'},
+  {id:'pill',name:'ピル'},{id:'hexagon',name:'六角'},{id:'octagon',name:'八角'},
+  {id:'diamond',name:'ひし形'},{id:'shield',name:'シールド'},
+  {id:'burst',name:'バースト'},{id:'ring',name:'リング'},
+];
+const COLORS = ['#e3350d','#3b4cca','#f2841c','#00a5b5','#7d4fc4',
+                '#3aa856','#d61f8c','#d4af37','#1a1c22','#e0453a'];
+const SIZES = [90,105,120,135,150,168,186,205,228,255]; // px, 10段階
+const EFFECTS = [
+  {id:'ripple',name:'波紋',n:3},{id:'wave',name:'波線',n:1},{id:'pulse',name:'同心円',n:1},
+  {id:'bars',name:'音量バー',n:7},{id:'glow',name:'グロー',n:1},{id:'rotate',name:'回転リング',n:1},
+  {id:'sparkle',name:'スパークル',n:8},{id:'orbit',name:'周回ドット',n:1},
+  {id:'concentric',name:'拡散円',n:3},{id:'aurora',name:'オーロラ',n:1},
+];
+
+/* ---------- 既定設定 ---------- */
+const DEFAULT = {t:'gs', s:'circle', c:7, z:4, f:'pulse', u:'', ti:'コエワ～プ'};
+
+/* ---------- ユーティリティ ---------- */
+const $ = (id)=>document.getElementById(id);
+function encodeCfg(c){ return btoa(unescape(encodeURIComponent(JSON.stringify(c)))).replace(/=+$/,''); }
+function decodeCfg(s){ try{ return JSON.parse(decodeURIComponent(escape(atob(s)))); }catch(e){ return null; } }
+
+/* ================================================================
+   ルーティング：#r=... があれば録音画面，なければ設定画面
+================================================================ */
+function getHashCfg(){
+  const m = location.hash.match(/[#&]r=([^&]+)/);
+  return m ? decodeCfg(m[1]) : null;
+}
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  const rec = getHashCfg();
+  if(rec){ initRecorder(rec); }
+  else { initSettings(); }
+});
+
+/* ================================================================
+   設定画面
+================================================================ */
+function initSettings(){
+  const cfg = Object.assign({}, DEFAULT, loadLocal());
+  cfg.ti = DEFAULT.ti; // タイトルは固定（旧localStorageの名前を引き継がない）
+
+  // 記録先URL
+  const driveUrl = $('driveUrl');
+  driveUrl.value = cfg.u || '';
+  updateDriveStatus();
+  driveUrl.addEventListener('input', ()=>{ cfg.u = driveUrl.value.trim(); updateDriveStatus(); saveLocal(cfg); });
+
+  function updateDriveStatus(){
+    const v = driveUrl.value.trim();
+    const ok = /^https?:\/\//.test(v);
+    // URLが有効なときだけ「🔍接続テスト」リンクを表示（ドット廃止）
+    const tl = $('testLink');
+    if(ok){ tl.hidden=false; tl.href=v; } else { tl.hidden=true; }
+  }
+
+  $('setupToggle').addEventListener('click',(e)=>{ e.preventDefault();
+    const g=$('setupGuide'); g.hidden=false;
+    g.scrollIntoView({behavior:'smooth', block:'start'}); });
+
+  // ---- GAS設置ガイド：フォルダID自動埋め込み＋コードコピー ----
+  const folderUrl=$('folderUrl');
+  const folderStatus=$('folderStatus');
+  let folderId='';
+  folderUrl.addEventListener('input', ()=>{
+    folderId=extractFolderId(folderUrl.value.trim());
+    if(!folderUrl.value.trim()){ folderStatus.textContent='未入力'; folderStatus.className='sg-status'; }
+    else if(folderId){ folderStatus.textContent='✔ フォルダIDを認識：'+folderId; folderStatus.className='sg-status ok'; }
+    else { folderStatus.textContent='⚠ URLからフォルダIDを読み取れません'; folderStatus.className='sg-status ng'; }
+  });
+  $('copyGas').addEventListener('click', ()=>{
+    const id=folderId || '';
+    const code=GAS_TEMPLATE.replace('__FOLDER_ID__', id);
+    doCopy(code);
+    if(id){ $('copyGas').textContent='✅ コピーしました！Apps Scriptに貼り付けてください'; }
+    else { $('copyGas').textContent='📋 コピーしました（フォルダID未設定→マイドライブ直下に保存されます）'; }
+    setTimeout(()=>{ $('copyGas').textContent='📋 GASコードをコピー'; }, 4000);
+  });
+
+  // ---- ビジュアルピッカー生成 ----
+  buildPickers(cfg);
+
+  applyPreview(cfg);
+
+  // プレビューのマイクを押すとエフェクトを再生
+  $('previewMic').addEventListener('click', ()=>{ runFxOnce($('fxLayer')); });
+
+  // 共有URL発行
+  $('publishBtn').addEventListener('click', ()=>publish(cfg));
+  $('copyBtn').addEventListener('click', ()=>{
+    const s=$('shareUrl'); s.select(); doCopy(s.value); $('shareMsg').textContent='コピーしました！';
+  });
+
+  // 共有URL履歴（開閉）
+  const histToggle=$('histToggle');
+  if(histToggle){
+    histToggle.addEventListener('click', ()=>{
+      const p=$('histPanel'); p.hidden=!p.hidden;
+      histToggle.classList.toggle('open', !p.hidden);
+      if(!p.hidden) renderHistory();
+    });
+  }
+  renderHistory();
+
+  // 各種セレクタ変更時に反映
+  window.__cfg = cfg;
+}
+
+const COLOR_NAMES=['レッド','ブルー','オレンジ','ティール','パープル','グリーン','マゼンタ','ゴールド','ブラック','コーラル'];
+const FX_GLYPH={ripple:'◎',wave:'〜',pulse:'⊙',bars:'▮',glow:'✺',rotate:'↻',sparkle:'✦',orbit:'◍',concentric:'◉',aurora:'≋'};
+
+/* ---- ビジュアルピッカー：正方形アイコンを並べ，押すと下に見本が展開 ---- */
+const PICKERS=[
+  {kind:'theme', title:'テーマカラー'},
+  {kind:'shape', title:'マイクの形'},
+  {kind:'color', title:'マイクの色'},
+  {kind:'size',  title:'大きさ'},
+  {kind:'fx',    title:'エフェクト'},
+];
+function pkItems(kind){
+  if(kind==='theme') return THEMES.map(t=>({v:t.id,label:t.name}));
+  if(kind==='shape') return SHAPES.map(s=>({v:s.id,label:s.name}));
+  if(kind==='color') return COLORS.map((c,i)=>({v:i,label:COLOR_NAMES[i]}));
+  if(kind==='size')  return SIZES.map((z,i)=>({v:i,label:'大きさ'+(i+1)}));
+  return EFFECTS.map(f=>({v:f.id,label:f.name}));
+}
+function pkGet(kind,cfg){
+  return kind==='theme'?cfg.t:kind==='shape'?cfg.s:kind==='color'?cfg.c:kind==='size'?cfg.z:cfg.f;
+}
+function pkSet(kind,cfg,v){
+  if(kind==='theme')cfg.t=v; else if(kind==='shape')cfg.s=v;
+  else if(kind==='color')cfg.c=+v; else if(kind==='size')cfg.z=+v; else cfg.f=v;
+}
+function pkSwatch(kind,v){
+  const el=document.createElement('span');
+  if(kind==='theme'){
+    el.className='sw-theme';
+    const t=THEMES.find(x=>x.id===v)||THEMES[0];
+    t.cols.forEach(c=>{ const i=document.createElement('i'); i.style.background=c; el.appendChild(i); });
+  } else if(kind==='shape'){
+    el.className='sw-shape shaped shape-'+v;
+  } else if(kind==='color'){
+    el.className='sw-color'; el.style.background=COLORS[+v]||COLORS[0];
+  } else if(kind==='size'){
+    el.className='sw-size'; const d=8+(+v)*2; el.style.width=d+'px'; el.style.height=d+'px';
+  } else {
+    el.className='sw-fx'; el.textContent=FX_GLYPH[v]||'✨';
+  }
+  return el;
+}
+function buildPickers(cfg){
+  const host=$('pickers'); host.innerHTML='';
+  const bar=document.createElement('div'); bar.className='picker-bar';
+  const grid=document.createElement('div'); grid.className='picker-grid'; grid.hidden=true;
+  let openKind=null;
+
+  const heads={};
+  function paintHead(kind){
+    const h=heads[kind]; h.innerHTML=''; h.appendChild(pkSwatch(kind, pkGet(kind,cfg)));
+  }
+  function closeGrid(){
+    openKind=null; grid.hidden=true;
+    bar.querySelectorAll('.picker-head.on').forEach(h=>h.classList.remove('on'));
+  }
+  function openGrid(kind){
+    openKind=kind;
+    Object.values(heads).forEach(h=>h.classList.toggle('on', h===heads[kind]));
+    grid.innerHTML='';
+    const cur=pkGet(kind,cfg);
+    pkItems(kind).forEach(it=>{
+      const b=document.createElement('button'); b.type='button'; b.className='swatch'; b.title=it.label;
+      if(String(it.v)===String(cur)) b.classList.add('on');
+      b.appendChild(pkSwatch(kind,it.v));
+      b.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        pkSet(kind,cfg,it.v);
+        grid.querySelectorAll('.swatch.on').forEach(x=>x.classList.remove('on'));
+        b.classList.add('on');
+        paintHead(kind);
+        applyPreview(cfg); saveLocal(cfg);
+        runFxOnce($('fxLayer'));   // 選ぶたびに変化をプレビュー再生
+      });
+      grid.appendChild(b);
+    });
+    grid.hidden=false;
+  }
+
+  PICKERS.forEach(p=>{
+    const h=document.createElement('button'); h.type='button'; h.className='picker-head';
+    h.dataset.kind=p.kind; h.title=p.title; h.setAttribute('aria-label',p.title);
+    heads[p.kind]=h;
+    paintHead(p.kind);
+    h.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      if(openKind===p.kind) closeGrid(); else openGrid(p.kind);
+    });
+    bar.appendChild(h);
+  });
+
+  host.append(bar,grid);
+  document.addEventListener('click',(e)=>{ if(!e.target.closest('#pickers')) closeGrid(); });
+}
+
+/* プレビュー反映 */
+function applyPreview(cfg){
+  const root=document.body;
+  root.setAttribute('data-theme', cfg.t);
+  const stage=$('preview');
+  applyMicVisual(stage, cfg);
+  buildFxLayer($('fxLayer'), cfg.f);
+}
+/* マイクの見た目（形・色・大きさ）を要素へ適用 */
+function applyMicVisual(scope, cfg){
+  const size=SIZES[cfg.z]||150;
+  const color=COLORS[cfg.c]||COLORS[0];
+  scope.style.setProperty('--micsize', size+'px');
+  scope.style.setProperty('--mic', color);
+  const mic=scope.querySelector('.mic-btn');
+  if(mic){
+    SHAPES.forEach(s=>mic.classList.remove('shape-'+s.id));
+    mic.classList.add('shape-'+cfg.s);
+  }
+}
+/* エフェクト要素をレイヤーに構築 */
+function buildFxLayer(layer, fxId){
+  const fx=EFFECTS.find(e=>e.id===fxId)||EFFECTS[0];
+  layer.className='fx-layer fx-'+fx.id;
+  layer.innerHTML='';
+  const n = fx.id==='bars'? 9 : (fx.id==='sparkle'?8:fx.n);
+  for(let i=0;i<n;i++){
+    const el=document.createElement('div'); el.className='fx-el';
+    if(fx.id==='sparkle'||fx.id==='bars'){
+      // 散らす／並べる
+      if(fx.id==='sparkle'){ el.style.left=(15+Math.random()*70)+'%'; el.style.top=(15+Math.random()*70)+'%'; el.style.animationDelay=(Math.random()).toFixed(2)+'s'; }
+      if(fx.id==='bars'){ el.style.animationDelay=(i*0.08).toFixed(2)+'s'; }
+    }
+    layer.appendChild(el);
+  }
+  return layer;
+}
+/* エフェクトを一定時間だけ再生（プレビュー用） */
+function runFxOnce(layer){
+  layer.classList.add('fx-run');
+  const mic=layer.parentElement.querySelector('.mic-btn');
+  if(mic) mic.classList.add('recording');
+  clearTimeout(layer.__t);
+  layer.__t=setTimeout(()=>{ layer.classList.remove('fx-run'); if(mic) mic.classList.remove('recording'); }, 2600);
+}
+
+/* 共有URL発行 */
+function publish(cfg){
+  if(!cfg.u || !/^https?:\/\//.test(cfg.u)){
+    $('shareMsg').textContent='⚠ 先にSTEP1で記録先URLを設定してください';
+    $('driveCard').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  const k=makeShareId();
+  const payload={t:cfg.t,s:cfg.s,c:cfg.c,z:cfg.z,f:cfg.f,u:cfg.u,ti:cfg.ti||'コエワ～プ',k};
+  const url=location.origin+location.pathname+'#r='+encodeCfg(payload);
+  const out=$('shareOut'); out.hidden=false;
+  $('shareUrl').value=url;
+  doCopy(url);
+  $('shareMsg').textContent='✅ 共有URLを発行し，クリップボードにコピーしました！';
+  addHistory({k, u:cfg.u, url, ts:Date.now(), enabled:true});
+  renderHistory();
+}
+
+/* 共有URLごとの固有ID（オン・オフ管理用） */
+function makeShareId(){
+  const s='abcdefghijklmnopqrstuvwxyz0123456789';
+  let r=''; for(let i=0;i<10;i++){ r+=s[Math.floor(Math.random()*s.length)]; }
+  return r;
+}
+
+/* ===== 共有URL履歴（各端末のローカル保存・最大30件） ===== */
+const HISTORY_KEY='koewarp_history';
+function loadHistory(){ try{ return JSON.parse(localStorage.getItem(HISTORY_KEY))||[]; }catch(e){ return []; } }
+function saveHistory(a){ try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(a.slice(0,30))); }catch(e){} }
+function addHistory(entry){ const a=loadHistory().filter(x=>x.k!==entry.k); a.unshift(entry); saveHistory(a); }
+function fmtHistDate(ts){ const d=new Date(ts); const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+
+function setShareEnabled(k, enabled){
+  const a=loadHistory(); const i=a.findIndex(x=>x.k===k);
+  if(i<0) return;
+  a[i].enabled=enabled; saveHistory(a);
+  const u=a[i].u;
+  if(u && /^https?:\/\//.test(u)){
+    fetch(u,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'setEnabled',k,enabled})}).catch(()=>{});
+  }
+}
+
+function renderHistory(){
+  const panel=$('histPanel'); if(!panel) return;
+  const a=loadHistory();
+  if(a.length===0){ panel.innerHTML='<div class="hist-empty">まだ履歴はありません。共有URLを発行すると，ここに最大30件まで記録されます。</div>'; return; }
+  panel.innerHTML=a.map(e=>`
+    <div class="hist-row" data-k="${e.k}">
+      <div class="hist-info">
+        <div class="hist-date">${fmtHistDate(e.ts)}</div>
+        <div class="hist-url" title="${e.url}">${e.url}</div>
+      </div>
+      <div class="hist-acts">
+        <label class="hist-sw"><input type="checkbox" class="hist-en" ${e.enabled!==false?'checked':''}><span>送信</span></label>
+        <button type="button" class="hist-open">開く</button>
+        <button type="button" class="hist-copy">コピー</button>
+        <button type="button" class="hist-del" aria-label="削除">🗑</button>
+      </div>
+    </div>`).join('');
+  panel.querySelectorAll('.hist-row').forEach(row=>{
+    const k=row.getAttribute('data-k');
+    const e=a.find(x=>x.k===k);
+    row.querySelector('.hist-en').addEventListener('change',ev=>{
+      const on=ev.target.checked; setShareEnabled(k,on);
+      row.classList.toggle('off',!on);
+    });
+    row.classList.toggle('off', e.enabled===false);
+    row.querySelector('.hist-open').addEventListener('click',()=>{ window.open(e.url,'_blank','noopener'); });
+    row.querySelector('.hist-copy').addEventListener('click',()=>{ doCopy(e.url); });
+    row.querySelector('.hist-del').addEventListener('click',()=>{
+      const arr=loadHistory().filter(x=>x.k!==k); saveHistory(arr); renderHistory();
+    });
+  });
+}
+
+function doCopy(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).catch(()=>{}); }
+  else { const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); try{document.execCommand('copy');}catch(e){} t.remove(); }
+}
+
+/* localStorage 保存（作業中の設定を保持） */
+function saveLocal(cfg){ try{ localStorage.setItem('koewarp_cfg', JSON.stringify(cfg)); }catch(e){} }
+function loadLocal(){ try{ return JSON.parse(localStorage.getItem('koewarp_cfg'))||{}; }catch(e){ return {}; } }
+
+/* ================================================================
+   録音画面（共有リンク先）
+================================================================ */
+function initRecorder(cfg){
+  $('settings').hidden=true;
+  $('recorder').hidden=false;
+  document.body.setAttribute('data-theme', cfg.t||'rg');
+  $('recTitle').textContent = cfg.ti || 'コエワ～プ';
+
+  const stage=document.querySelector('.rec-stage');
+  applyMicVisual(stage, cfg);
+  buildFxLayer($('recFxLayer'), cfg.f);
+
+  const mic=$('recMic');
+  const status=$('recStatus');
+  const timerEl=$('recTimer');
+  const fxLayer=$('recFxLayer');
+
+  // ---- 音声向け設定（授業のグループ/ペア対話→Gemini/NotebookLM用）----
+  const TARGET_SR=16000;    // 16kHz：音声認識に最適・軽量
+  const KBPS=32;            // 声ならこれで十分クリア・さらに軽量
+  const SEGMENT_SEC=90*60;  // 90分ごとに自動分割（1ファイル約21MB）
+
+  let state='idle';         // idle | recording | processing
+  let stream=null, audioCtx=null, srcNode=null, capNode=null;
+  let lame=null, enc=null, mp3Parts=[], sampleRate=TARGET_SR;
+  let segSamples=0, totalSamples=0, partNo=0, baseName='';
+  let uploads=[];
+  let startTime=0, timerId=null;
+
+  mic.addEventListener('click', async ()=>{
+    if(state==='idle'){ await startRec(); }
+    else if(state==='recording'){ await stopRec(); }
+  });
+
+  // ファイル名＝データ名＋日付時刻＋audio（例）山田太郎_感想20260723_154210audio
+  // データ名が空なら日付時刻audio（例）20260723_154210audio
+  function nameNow(){
+    const raw = $('recName').value.trim();
+    const base = raw ? sanitize(raw) : '';
+    return base + tstamp() + 'audio';
+  }
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function newEncoder(){ enc=new lame.Mp3Encoder(1, sampleRate, KBPS); mp3Parts=[]; segSamples=0; }
+  function floatToInt16(f){
+    const n=f.length, out=new Int16Array(n);
+    for(let i=0;i<n;i++){ let v=f[i]; v=v<-1?-1:(v>1?1:v); out[i]=v<0?v*0x8000:v*0x7fff; }
+    return out;
+  }
+  // 逐次エンコード：PCMブロックが届くたびにMP3化して溜める（生データは保持しない）
+  function pushPcm(f){
+    if(state!=='recording'||!enc) return;
+    const buf=enc.encodeBuffer(floatToInt16(f));
+    if(buf.length>0) mp3Parts.push(new Uint8Array(buf));
+    segSamples+=f.length; totalSamples+=f.length;
+    if(segSamples >= SEGMENT_SEC*sampleRate){ flushSegment(false); }
+  }
+  function currentBlob(){
+    const end=enc.flush();
+    if(end.length>0) mp3Parts.push(new Uint8Array(end));
+    return new Blob(mp3Parts,{type:'audio/mpeg'});
+  }
+  // セグメント確定→送信。分割ありなら _01,_02… なしなら名前そのまま
+  function flushSegment(isFinal){
+    const blob=currentBlob();
+    let name;
+    if(isFinal && partNo===0){ name=baseName; }
+    else { partNo++; name=baseName+'_'+pad2(partNo); }
+    uploads.push(uploadMp3(cfg.u, blob, name, cfg.k));
+    if(!isFinal){ setStatus('パート'+partNo+'を送信中…（録音は継続中）','busy'); newEncoder(); }
+  }
+
+  async function startRec(){
+    if(!cfg.u){ setStatus('記録先が未設定です','err'); return; }
+    if(/\/dev(\?|$)/.test(cfg.u) || /\/edit(\?|$)/.test(cfg.u)){
+      setStatus('⚠ 記録先URLが正しくありません（末尾が /exec のURLを使ってください）','err'); return;
+    }
+    setStatus('準備しています…','busy');
+    try{ lame=await loadLame(); }catch(e){ setStatus('変換モジュールの読み込みに失敗しました','err'); return; }
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({audio:{
+        channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true
+      }});
+    }catch(e){ setStatus('マイクの使用が許可されませんでした','err'); return; }
+
+    const AC=window.AudioContext||window.webkitAudioContext;
+    try{ audioCtx=new AC({sampleRate:TARGET_SR}); }catch(e){ audioCtx=new AC(); }
+    sampleRate=audioCtx.sampleRate;               // 16kHz（対応外なら実レート）
+    srcNode=audioCtx.createMediaStreamSource(stream);
+
+    baseName=''; partNo=0; totalSamples=0; uploads=[];
+    newEncoder();
+
+    // キャプチャ：AudioWorklet優先（音声スレッドで安定）／不可ならScriptProcessor
+    let usingWorklet=false;
+    if(audioCtx.audioWorklet){
+      try{
+        const code="class P extends AudioWorkletProcessor{constructor(){super();this.b=[];this.n=0;}process(inp){const i=inp[0];if(i&&i[0]){const c=i[0];this.b.push(new Float32Array(c));this.n+=c.length;if(this.n>=2048){const o=new Float32Array(this.n);let k=0;for(const x of this.b){o.set(x,k);k+=x.length;}this.port.postMessage(o,[o.buffer]);this.b=[];this.n=0;}}return true;}}registerProcessor('cap',P);";
+        const url=URL.createObjectURL(new Blob([code],{type:'application/javascript'}));
+        await audioCtx.audioWorklet.addModule(url);
+        capNode=new AudioWorkletNode(audioCtx,'cap');
+        capNode.port.onmessage=(e)=>pushPcm(e.data);
+        usingWorklet=true;
+      }catch(e){ usingWorklet=false; }
+    }
+    if(!usingWorklet){
+      capNode=audioCtx.createScriptProcessor(4096,1,1);
+      capNode.onaudioprocess=(e)=>{ pushPcm(new Float32Array(e.inputBuffer.getChannelData(0))); };
+    }
+    srcNode.connect(capNode);
+    capNode.connect(audioCtx.destination);        // 出力は無音（フィードバックなし）
+
+    baseName=nameNow();                            // 開始時の名前を仮ロック（分割時に使用）
+    state='recording';
+    mic.classList.add('recording');
+    fxLayer.classList.add('fx-run');
+    setStatus('録音中… もう一度押すと停止','busy');
+    startTimer();
+  }
+
+  async function stopRec(){
+    state='processing';
+    mic.classList.remove('recording');
+    fxLayer.classList.remove('fx-run');
+    stopTimer();
+    setStatus('送信しています…','busy');
+    try{
+      try{ srcNode&&srcNode.disconnect(); }catch(e){}
+      try{ capNode&&capNode.disconnect(); }catch(e){}
+      if(stream){ stream.getTracks().forEach(t=>t.stop()); }
+      if(partNo===0){ baseName=nameNow(); }        // 分割なし→停止時の入力名を採用
+      flushSegment(true);
+      await Promise.all(uploads);
+      if(audioCtx){ try{ await audioCtx.close(); }catch(e){} }
+      const tail=partNo>1?('（全'+partNo+'ファイル）'):'';
+      setStatus('✅ 送信しました！ありがとうございました'+tail,'done');
+      timerEl.hidden=true;
+      $('recName').value='';
+    }catch(err){
+      console.error(err);
+      setStatus('⚠ 送信に失敗しました：'+(err.message||err),'err');
+    }finally{
+      state='idle';
+    }
+  }
+
+  function startTimer(){
+    startTime=Date.now(); timerEl.hidden=false; timerEl.textContent='00:00';
+    timerId=setInterval(()=>{
+      const s=Math.floor((Date.now()-startTime)/1000);
+      timerEl.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+    },250);
+  }
+  function stopTimer(){ clearInterval(timerId); }
+  function setStatus(t,cls){ status.textContent=t; status.className='rec-status'+(cls?' '+cls:''); }
+}
+
+function tstamp(){ const d=new Date(); const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
+
+/* ---------- MP3エンコード（lamejs） ---------- */
+let _lame=null;
+async function loadLame(){
+  if(_lame) return _lame;
+  _lame=await import('https://cdn.jsdelivr.net/npm/@breezystack/lamejs@1.2.7/+esm');
+  return _lame;
+}
+/* ---------- アップロード（Google Apps Script受け取り口へ） ----------
+   Apps Scriptの /exec は応答時に googleusercontent.com へ302リダイレクトするため，
+   通常のfetch(cors)ではレスポンスを読めず "Failed to fetch" になる。
+   no-cors で送信すると，レスポンスは読めないが保存自体は確実に行われる。 */
+async function uploadMp3(endpoint, mp3Blob, name, k){
+  const b64=await blobToBase64(mp3Blob);
+  const payload={ filename: sanitize(name)+'.mp3', mimeType:'audio/mpeg', data:b64 };
+  if(k) payload.k=k;
+  const body=JSON.stringify(payload);
+  await fetch(endpoint,{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body,
+    redirect:'follow',
+  });
+  return { ok:true };
+}
+function blobToBase64(blob){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(String(r.result).split(',')[1]);
+    r.onerror=reject;
+    r.readAsDataURL(blob);
+  });
+}
+function sanitize(n){ return n.replace(/[\\/:*?"<>|]/g,'_').slice(0,80)||'コエワ～プ'; }
+
+/* フォルダURL/IDからフォルダIDを取り出す */
+function extractFolderId(v){
+  if(!v) return '';
+  let m=v.match(/\/folders\/([a-zA-Z0-9_-]{10,})/);          // …/folders/ID
+  if(m) return m[1];
+  m=v.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);                   // …?id=ID
+  if(m) return m[1];
+  if(/^[a-zA-Z0-9_-]{20,}$/.test(v)) return v;                // ID直貼り
+  return '';
+}
+
+/* Apps Scriptに貼り付けるコード（__FOLDER_ID__ は自動置換） */
+const GAS_TEMPLATE = `/**
+ * コエワ～プ 受け取り口（このコードをそのまま貼り付けてください）
+ */
+var FOLDER_ID = '__FOLDER_ID__';
+
+function doPost(e) {
+  try {
+    var body = JSON.parse(e.postData.contents);
+
+    // 共有URLのオン・オフ切り替え（発行者だけが操作）
+    if (body.action === 'setEnabled') {
+      var props = PropertiesService.getScriptProperties();
+      var list = JSON.parse(props.getProperty('disabled') || '[]');
+      var key = String(body.k || '');
+      if (body.enabled) {
+        list = list.filter(function (x) { return x !== key; });
+      } else if (key && list.indexOf(key) < 0) {
+        list.push(key);
+      }
+      props.setProperty('disabled', JSON.stringify(list));
+      return json({ ok: true, disabled: !body.enabled });
+    }
+
+    // オフにされた共有URLからの送信は保存しない
+    var k = String(body.k || '');
+    if (k) {
+      var dis = JSON.parse(PropertiesService.getScriptProperties().getProperty('disabled') || '[]');
+      if (dis.indexOf(k) >= 0) {
+        return json({ ok: false, skipped: true, reason: 'disabled' });
+      }
+    }
+
+    var filename = (body.filename || 'コエワ～プ.mp3').toString();
+    var mimeType = body.mimeType || 'audio/mpeg';
+    var bytes = Utilities.base64Decode(body.data);
+    var blob = Utilities.newBlob(bytes, mimeType, filename);
+
+    // 保存先：記録先フォルダ内に「当日の日付(yyyyMMdd)」フォルダを自動作成
+    var parent = FOLDER_ID ? DriveApp.getFolderById(FOLDER_ID) : DriveApp.getRootFolder();
+    var dayName = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyyMMdd');
+    var it = parent.getFoldersByName(dayName);
+    var folder = it.hasNext() ? it.next() : parent.createFolder(dayName);
+
+    var file = folder.createFile(blob);
+    return json({ ok: true, id: file.getId(), name: file.getName(), url: file.getUrl() });
+  } catch (err) {
+    return json({ ok: false, error: String(err) });
+  }
+}
+
+function doGet() {
+  return ContentService.createTextOutput('コエワ～プ 受け取り口は正常に動いています。')
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+function json(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+`;
+
+</script>
+</body>
+</html>

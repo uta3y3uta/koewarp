@@ -4,6 +4,15 @@
 
 設定画面でデザインを選び，**共有URLを1つ発行するだけ**。共有された人はマイクを押して話すだけで，MP3が自動的にあなたのドライブへ保存されます（共有相手のログイン不要）。
 
+## 公開URL（中身は同じ・どちらでも動きます）
+| URL | 用途 |
+|---|---|
+| https://koewarp.web.app/ | **推奨。** Googleのドメインなので，github.io がブロックされる自治体でも開けます |
+| https://koewarp.firebaseapp.com/ | 上の予備（同じ配信元） |
+| https://uta3y3uta.github.io/koewarp/ | 従来のGitHub Pages版 |
+
+共有URLは「開いているページのドメイン」を引き継ぎます。配布したい環境に合わせたドメインで開いてから発行してください。
+
 ## 特長
 - **1画面完結の設定** — 記録先URLを貼る → 見た目を選ぶ → 共有URLを発行
 - **10テーマ** — ポケモン歴代作品を彷彿とさせる配色（キャラクターは登場しません）
@@ -32,6 +41,17 @@
 | `styles.css` | 10テーマ・マイク形状・エフェクト |
 | `app.js` | 設定生成・共有URL・録音・MP3変換・送信 |
 | `gas/Code.gs` | Googleドライブ受け取り口 |
+| `build.js` | 上の3ファイルを1枚にまとめる（`dist/index.html`・`koewarp.html`） |
+| `koewarp.html` | CSS・JS全部入りの単独HTML（配布・別ホストへの設置用） |
+
+## 更新のしかた
+`index.html` / `styles.css` / `app.js` を編集したあと：
+
+```bash
+node build.js                      # 単独HTMLを再生成
+firebase deploy --only hosting     # koewarp.web.app へ反映
+git push                           # GitHub Pages へ反映
+```
 
 ## 技術メモ
 - MP3変換：[@breezystack/lamejs](https://www.npmjs.com/package/@breezystack/lamejs)（CDNから動的import）
