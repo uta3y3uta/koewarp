@@ -512,12 +512,12 @@ function initRecorder(cfg){
 function tstamp(){ const d=new Date(); const p=n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
 
-/* ---------- MP3エンコード（lamejs） ---------- */
-let _lame=null;
+/* ---------- MP3エンコード（lamejs） ----------
+   CDNを弾く学校ネットワークでも動くよう vendor/lamejs.iife.js を同梱し，
+   グローバル lamejs として読み込む。 */
 async function loadLame(){
-  if(_lame) return _lame;
-  _lame=await import('https://cdn.jsdelivr.net/npm/@breezystack/lamejs@1.2.7/+esm');
-  return _lame;
+  if(!window.lamejs) throw new Error('lamejs not loaded');
+  return window.lamejs;
 }
 /* ---------- アップロード（Google Apps Script受け取り口へ） ----------
    Apps Scriptの /exec は応答時に googleusercontent.com へ302リダイレクトするため，

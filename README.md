@@ -41,7 +41,8 @@
 | `styles.css` | 10テーマ・マイク形状・エフェクト |
 | `app.js` | 設定生成・共有URL・録音・MP3変換・送信 |
 | `gas/Code.gs` | Googleドライブ受け取り口 |
-| `build.js` | 上の3ファイルを1枚にまとめる（`dist/index.html`・`koewarp.html`） |
+| `vendor/lamejs.iife.js` | MP3エンコーダ（同梱。外部CDNに依存しない） |
+| `build.js` | 上のファイルを1枚にまとめる（`dist/index.html`・`koewarp.html`） |
 | `koewarp.html` | CSS・JS全部入りの単独HTML（配布・別ホストへの設置用） |
 
 ## 更新のしかた
@@ -54,7 +55,7 @@ git push                           # GitHub Pages へ反映
 ```
 
 ## 技術メモ
-- MP3変換：[@breezystack/lamejs](https://www.npmjs.com/package/@breezystack/lamejs)（CDNから動的import）
+- MP3変換：[@breezystack/lamejs](https://www.npmjs.com/package/@breezystack/lamejs)（`vendor/lamejs.iife.js` に同梱。CDNを弾く学校ネットワークでも動くようにするため）
 - 録音：`MediaRecorder` → `decodeAudioData` → PCM → lamejsでMP3化
 - 共有設定：URLハッシュにBase64で埋め込み（サーバー不要）
 - 送信：`text/plain` でPOSTしCORSプリフライトを回避（Apps Scriptの定石）
