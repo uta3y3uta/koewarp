@@ -116,6 +116,13 @@
       <div class="fx-layer" id="recFxLayer"></div>
       <button class="mic-btn shaped" id="recMic" type="button" aria-label="録音">
         <svg viewBox="0 0 24 24" class="mic-ic"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 1 0 2 0v-3.08A7 7 0 0 0 19 11z"/></svg>
+        <!-- 録音後は ▶（次へ進む）に切り替わる -->
+        <svg viewBox="0 0 24 24" class="next-ic"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
+      </button>
+      <!-- 録音後だけ表示：押すとこの録音をMP3ファイルとして端末に保存 -->
+      <button class="rec-save" id="recSave" type="button" aria-label="端末に保存" title="端末に保存" hidden>
+        <svg viewBox="0 0 24 24" class="ic-save"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
+        <svg viewBox="0 0 24 24" class="ic-done"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
       </button>
     </div>
     <div class="rec-status" id="recStatus">マイクを押して録音を開始</div>

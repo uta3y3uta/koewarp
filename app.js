@@ -375,32 +375,63 @@ function initRecorder(cfg){
   const KBPS=32;            // 声ならこれで十分クリア・さらに軽量
   const SEGMENT_SEC=90*60;  // 90分ごとに自動分割（1ファイル約21MB）
 
-  let state='idle';         // idle | recording | processing
+  let state='idle';         // idle | recording | processing | review（録音後：▶か💾を選ぶ）
   let stream=null, audioCtx=null, srcNode=null, capNode=null;
   let lame=null, enc=null, mp3Parts=[], sampleRate=TARGET_SR;
   let segSamples=0, totalSamples=0, partNo=0, baseName='';
   let uploads=[];
+  let lastFiles=[];         // 直前の録音（💾で端末に保存する用）。▶で手放す
   let startTime=0, timerId=null;
   let lastFailed=false;     // 直前の録音が未送信 → 後から届いたら表示を更新する
   let wake=null;            // 録音・送信中は画面を消さない（スリープで通信が切れるのを防ぐ）
+  const saveBtn=$('recSave');
+  const isRest=()=>state==='idle'||state==='review';
 
   // 送信トレイ：録音は端末に保存してから送り，届くまで自動で再送信する
   const outbox=createOutbox({
     onChange: renderPending,
-    onDrained: ()=>{ if(lastFailed && state==='idle'){ lastFailed=false; setStatus('✅ 未送信だった録音を送信しました','done'); } },
-    canRun: ()=>state==='idle',
+    onDrained: ()=>{ if(lastFailed && isRest()){ lastFailed=false; setStatus('✅ 未送信だった録音を送信しました','done'); } },
+    canRun: isRest,
   });
   $('recPending').addEventListener('click', ()=>outbox.flush(true));
   outbox.start();
 
   document.addEventListener('visibilitychange', ()=>{
-    if(document.visibilityState==='visible' && state!=='idle') keepAwake(true);
+    if(document.visibilityState==='visible' && !isRest()) keepAwake(true);
   });
 
   mic.addEventListener('click', async ()=>{
     if(state==='idle'){ await startRec(); }
     else if(state==='recording'){ await stopRec(); }
+    else if(state==='review'){ goNext(); }
   });
+  saveBtn.addEventListener('click', ()=>{
+    if(state!=='review' || !lastFiles.length || saveBtn.classList.contains('saved')) return;
+    downloadFiles(lastFiles);
+    saveBtn.classList.add('saved');
+    saveBtn.setAttribute('aria-label','端末に保存しました');
+  });
+
+  // 録音後：大きなボタンを ▶ に切り替え，その下に小さな 💾 を出す
+  function showReview(){
+    state='review';
+    mic.classList.add('is-next');
+    mic.setAttribute('aria-label','次へ進む');
+    saveBtn.classList.remove('saved');
+    saveBtn.setAttribute('aria-label','端末に保存');
+    saveBtn.hidden = !lastFiles.length;
+  }
+  // ▶：これまでどおり次の録音へ。手元の音声データは持たない
+  // （未送信のものだけは送信トレイが届くまで保持し，届いたら消える）
+  function goNext(){
+    lastFiles=[];
+    saveBtn.hidden=true;
+    mic.classList.remove('is-next');
+    mic.setAttribute('aria-label','録音');
+    timerEl.hidden=true;
+    state='idle';
+    setStatus('マイクを押して録音を開始');
+  }
 
   // ファイル名＝データ名＋日付時刻＋audio（例）山田太郎_感想20260723_154210audio
   // データ名が空なら日付時刻audio（例）20260723_154210audio
@@ -436,6 +467,7 @@ function initRecorder(cfg){
     if(isFinal && partNo===0){ name=baseName; }
     else { partNo++; name=baseName+'_'+pad2(partNo); }
     const item={ uid:newUid(), endpoint:cfg.u, k:cfg.k||'', name, blob, at:Date.now() };
+    lastFiles.push({ name, blob });
     outbox.add(item);                              // 送る前に端末へ保存（失敗しても消えない）
     uploads.push(outbox.send(item, 3, (n)=>{
       if(state==='processing') setStatus('つながりにくいため送り直しています…（'+n+'回目）','busy');
@@ -461,7 +493,7 @@ function initRecorder(cfg){
     sampleRate=audioCtx.sampleRate;               // 16kHz（対応外なら実レート）
     srcNode=audioCtx.createMediaStreamSource(stream);
 
-    baseName=''; partNo=0; totalSamples=0; uploads=[];
+    baseName=''; partNo=0; totalSamples=0; uploads=[]; lastFiles=[];
     newEncoder();
 
     // キャプチャ：AudioWorklet優先（音声スレッドで安定）／不可ならScriptProcessor
@@ -522,8 +554,8 @@ function initRecorder(cfg){
       setStatus('⚠ 送信に失敗しました：'+(err.message||err),'err');
     }finally{
       closeAudio();
-      state='idle';
       keepAwake(false);
+      showReview();
       renderPending();
     }
   }
@@ -747,6 +779,17 @@ function blobToBase64(blob){
   });
 }
 function sanitize(n){ return n.replace(/[\\/:*?"<>|]/g,'_').slice(0,80)||'コエワ～プ'; }
+
+/* MP3を端末に保存（ダウンロード）。分割された長時間録音は少し間をあけて順に保存 */
+function downloadFiles(files){
+  files.forEach((f,i)=>setTimeout(()=>{
+    const url=URL.createObjectURL(f.blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=sanitize(f.name)+'.mp3';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  }, i*500));
+}
 
 /* フォルダURL/IDからフォルダIDを取り出す */
 function extractFolderId(v){

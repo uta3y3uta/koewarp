@@ -223,6 +223,23 @@ body{
 .rec-status.err{color:#c0392b}
 .rec-timer{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;
   color:var(--brand);margin-top:6px;letter-spacing:.05em}
+/* 録音後：マイク → ▶（次へ進む）。形・色・大きさはマイクと同じ */
+.mic-btn .next-ic{display:none;width:46%;height:46%;fill:currentColor;transform:translateX(6%);
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.2))}
+.mic-btn.is-next .mic-ic{display:none}
+.mic-btn.is-next .next-ic{display:block}
+/* 保存ボタン：▶の真下の余白に小さく（録音画面のステージは上下に60pxずつ余白がある） */
+.rec-save{position:absolute;z-index:3;left:50%;top:calc(50% + var(--micsize) / 2 + 16px);
+  transform:translateX(-50%);width:42px;height:42px;border-radius:50%;
+  border:1.5px solid var(--line);background:#fff;color:var(--sub);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,.12);
+  transition:transform .12s,color .2s,border-color .2s}
+.rec-save:active{transform:translateX(-50%) scale(.92)}
+.rec-save svg{width:22px;height:22px;fill:currentColor}
+.rec-save .ic-done{display:none}
+.rec-save.saved{color:#1a9e4b;border-color:#9fd9b4;cursor:default}
+.rec-save.saved .ic-save{display:none}
+.rec-save.saved .ic-done{display:block}
 .rec-pending{margin-top:12px;padding:7px 16px;border-radius:999px;border:1.5px solid #e2a39b;
   background:#fff6f4;color:#c0392b;font-size:13px;font-weight:700;cursor:pointer}
 .rec-pending:disabled{opacity:.65;cursor:default}
@@ -415,6 +432,13 @@ body{
       <div class="fx-layer" id="recFxLayer"></div>
       <button class="mic-btn shaped" id="recMic" type="button" aria-label="録音">
         <svg viewBox="0 0 24 24" class="mic-ic"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 1 0 2 0v-3.08A7 7 0 0 0 19 11z"/></svg>
+        <!-- 録音後は ▶（次へ進む）に切り替わる -->
+        <svg viewBox="0 0 24 24" class="next-ic"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
+      </button>
+      <!-- 録音後だけ表示：押すとこの録音をMP3ファイルとして端末に保存 -->
+      <button class="rec-save" id="recSave" type="button" aria-label="端末に保存" title="端末に保存" hidden>
+        <svg viewBox="0 0 24 24" class="ic-save"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/></svg>
+        <svg viewBox="0 0 24 24" class="ic-done"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
       </button>
     </div>
     <div class="rec-status" id="recStatus">マイクを押して録音を開始</div>
@@ -819,32 +843,63 @@ function initRecorder(cfg){
   const KBPS=32;            // 声ならこれで十分クリア・さらに軽量
   const SEGMENT_SEC=90*60;  // 90分ごとに自動分割（1ファイル約21MB）
 
-  let state='idle';         // idle | recording | processing
+  let state='idle';         // idle | recording | processing | review（録音後：▶か💾を選ぶ）
   let stream=null, audioCtx=null, srcNode=null, capNode=null;
   let lame=null, enc=null, mp3Parts=[], sampleRate=TARGET_SR;
   let segSamples=0, totalSamples=0, partNo=0, baseName='';
   let uploads=[];
+  let lastFiles=[];         // 直前の録音（💾で端末に保存する用）。▶で手放す
   let startTime=0, timerId=null;
   let lastFailed=false;     // 直前の録音が未送信 → 後から届いたら表示を更新する
   let wake=null;            // 録音・送信中は画面を消さない（スリープで通信が切れるのを防ぐ）
+  const saveBtn=$('recSave');
+  const isRest=()=>state==='idle'||state==='review';
 
   // 送信トレイ：録音は端末に保存してから送り，届くまで自動で再送信する
   const outbox=createOutbox({
     onChange: renderPending,
-    onDrained: ()=>{ if(lastFailed && state==='idle'){ lastFailed=false; setStatus('✅ 未送信だった録音を送信しました','done'); } },
-    canRun: ()=>state==='idle',
+    onDrained: ()=>{ if(lastFailed && isRest()){ lastFailed=false; setStatus('✅ 未送信だった録音を送信しました','done'); } },
+    canRun: isRest,
   });
   $('recPending').addEventListener('click', ()=>outbox.flush(true));
   outbox.start();
 
   document.addEventListener('visibilitychange', ()=>{
-    if(document.visibilityState==='visible' && state!=='idle') keepAwake(true);
+    if(document.visibilityState==='visible' && !isRest()) keepAwake(true);
   });
 
   mic.addEventListener('click', async ()=>{
     if(state==='idle'){ await startRec(); }
     else if(state==='recording'){ await stopRec(); }
+    else if(state==='review'){ goNext(); }
   });
+  saveBtn.addEventListener('click', ()=>{
+    if(state!=='review' || !lastFiles.length || saveBtn.classList.contains('saved')) return;
+    downloadFiles(lastFiles);
+    saveBtn.classList.add('saved');
+    saveBtn.setAttribute('aria-label','端末に保存しました');
+  });
+
+  // 録音後：大きなボタンを ▶ に切り替え，その下に小さな 💾 を出す
+  function showReview(){
+    state='review';
+    mic.classList.add('is-next');
+    mic.setAttribute('aria-label','次へ進む');
+    saveBtn.classList.remove('saved');
+    saveBtn.setAttribute('aria-label','端末に保存');
+    saveBtn.hidden = !lastFiles.length;
+  }
+  // ▶：これまでどおり次の録音へ。手元の音声データは持たない
+  // （未送信のものだけは送信トレイが届くまで保持し，届いたら消える）
+  function goNext(){
+    lastFiles=[];
+    saveBtn.hidden=true;
+    mic.classList.remove('is-next');
+    mic.setAttribute('aria-label','録音');
+    timerEl.hidden=true;
+    state='idle';
+    setStatus('マイクを押して録音を開始');
+  }
 
   // ファイル名＝データ名＋日付時刻＋audio（例）山田太郎_感想20260723_154210audio
   // データ名が空なら日付時刻audio（例）20260723_154210audio
@@ -880,6 +935,7 @@ function initRecorder(cfg){
     if(isFinal && partNo===0){ name=baseName; }
     else { partNo++; name=baseName+'_'+pad2(partNo); }
     const item={ uid:newUid(), endpoint:cfg.u, k:cfg.k||'', name, blob, at:Date.now() };
+    lastFiles.push({ name, blob });
     outbox.add(item);                              // 送る前に端末へ保存（失敗しても消えない）
     uploads.push(outbox.send(item, 3, (n)=>{
       if(state==='processing') setStatus('つながりにくいため送り直しています…（'+n+'回目）','busy');
@@ -905,7 +961,7 @@ function initRecorder(cfg){
     sampleRate=audioCtx.sampleRate;               // 16kHz（対応外なら実レート）
     srcNode=audioCtx.createMediaStreamSource(stream);
 
-    baseName=''; partNo=0; totalSamples=0; uploads=[];
+    baseName=''; partNo=0; totalSamples=0; uploads=[]; lastFiles=[];
     newEncoder();
 
     // キャプチャ：AudioWorklet優先（音声スレッドで安定）／不可ならScriptProcessor
@@ -966,8 +1022,8 @@ function initRecorder(cfg){
       setStatus('⚠ 送信に失敗しました：'+(err.message||err),'err');
     }finally{
       closeAudio();
-      state='idle';
       keepAwake(false);
+      showReview();
       renderPending();
     }
   }
@@ -1191,6 +1247,17 @@ function blobToBase64(blob){
   });
 }
 function sanitize(n){ return n.replace(/[\\/:*?"<>|]/g,'_').slice(0,80)||'コエワ～プ'; }
+
+/* MP3を端末に保存（ダウンロード）。分割された長時間録音は少し間をあけて順に保存 */
+function downloadFiles(files){
+  files.forEach((f,i)=>setTimeout(()=>{
+    const url=URL.createObjectURL(f.blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=sanitize(f.name)+'.mp3';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  }, i*500));
+}
 
 /* フォルダURL/IDからフォルダIDを取り出す */
 function extractFolderId(v){

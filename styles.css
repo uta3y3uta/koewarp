@@ -213,6 +213,23 @@ body{
 .rec-status.err{color:#c0392b}
 .rec-timer{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;
   color:var(--brand);margin-top:6px;letter-spacing:.05em}
+/* 録音後：マイク → ▶（次へ進む）。形・色・大きさはマイクと同じ */
+.mic-btn .next-ic{display:none;width:46%;height:46%;fill:currentColor;transform:translateX(6%);
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.2))}
+.mic-btn.is-next .mic-ic{display:none}
+.mic-btn.is-next .next-ic{display:block}
+/* 保存ボタン：▶の真下の余白に小さく（録音画面のステージは上下に60pxずつ余白がある） */
+.rec-save{position:absolute;z-index:3;left:50%;top:calc(50% + var(--micsize) / 2 + 16px);
+  transform:translateX(-50%);width:42px;height:42px;border-radius:50%;
+  border:1.5px solid var(--line);background:#fff;color:var(--sub);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,.12);
+  transition:transform .12s,color .2s,border-color .2s}
+.rec-save:active{transform:translateX(-50%) scale(.92)}
+.rec-save svg{width:22px;height:22px;fill:currentColor}
+.rec-save .ic-done{display:none}
+.rec-save.saved{color:#1a9e4b;border-color:#9fd9b4;cursor:default}
+.rec-save.saved .ic-save{display:none}
+.rec-save.saved .ic-done{display:block}
 .rec-pending{margin-top:12px;padding:7px 16px;border-radius:999px;border:1.5px solid #e2a39b;
   background:#fff6f4;color:#c0392b;font-size:13px;font-weight:700;cursor:pointer}
 .rec-pending:disabled{opacity:.65;cursor:default}
