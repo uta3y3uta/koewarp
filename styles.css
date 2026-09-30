@@ -59,6 +59,9 @@ body{
 .sg-steps b{color:var(--brand)}
 .sg-sub{font-size:11px;color:var(--sub);margin-top:3px}
 .sg-note{font-size:11px;color:var(--sub);margin-left:6px}
+.sg-update{margin:4px 0 0;padding:8px 12px;border-radius:10px;background:var(--bg1);
+  font-size:11.5px;line-height:1.75;color:var(--sub)}
+.sg-update b{color:var(--ink)}
 @counter-style sg-circled{system:fixed;symbols:"①" "②" "③" "④" "⑤" "⑥" "⑦" "⑧" "⑨";suffix:" "}
 .sg-ol{margin:5px 0 0;padding-left:20px;color:var(--sub);line-height:1.7;list-style:sg-circled}
 .sg-ol li{margin-bottom:2px}
@@ -210,6 +213,9 @@ body{
 .rec-status.err{color:#c0392b}
 .rec-timer{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;
   color:var(--brand);margin-top:6px;letter-spacing:.05em}
+.rec-pending{margin-top:12px;padding:7px 16px;border-radius:999px;border:1.5px solid #e2a39b;
+  background:#fff6f4;color:#c0392b;font-size:13px;font-weight:700;cursor:pointer}
+.rec-pending:disabled{opacity:.65;cursor:default}
 
 /* ================= エフェクト（10種） ================= */
 .fx-el{position:absolute;pointer-events:none}

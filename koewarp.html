@@ -69,6 +69,9 @@ body{
 .sg-steps b{color:var(--brand)}
 .sg-sub{font-size:11px;color:var(--sub);margin-top:3px}
 .sg-note{font-size:11px;color:var(--sub);margin-left:6px}
+.sg-update{margin:4px 0 0;padding:8px 12px;border-radius:10px;background:var(--bg1);
+  font-size:11.5px;line-height:1.75;color:var(--sub)}
+.sg-update b{color:var(--ink)}
 @counter-style sg-circled{system:fixed;symbols:"①" "②" "③" "④" "⑤" "⑥" "⑦" "⑧" "⑨";suffix:" "}
 .sg-ol{margin:5px 0 0;padding-left:20px;color:var(--sub);line-height:1.7;list-style:sg-circled}
 .sg-ol li{margin-bottom:2px}
@@ -220,6 +223,9 @@ body{
 .rec-status.err{color:#c0392b}
 .rec-timer{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;
   color:var(--brand);margin-top:6px;letter-spacing:.05em}
+.rec-pending{margin-top:12px;padding:7px 16px;border-radius:999px;border:1.5px solid #e2a39b;
+  background:#fff6f4;color:#c0392b;font-size:13px;font-weight:700;cursor:pointer}
+.rec-pending:disabled{opacity:.65;cursor:default}
 
 /* ================= エフェクト（10種） ================= */
 .fx-el{position:absolute;pointer-events:none}
@@ -393,6 +399,10 @@ body{
         <b>このページ上部の記録先欄</b>に貼り付け，共有URLを発行したら完了！
       </li>
     </ol>
+    <p class="sg-update">
+      <b>設置済みの方へ（受け取り口の更新）</b>：３のコードを貼り替えて保存 →「デプロイ」→<b>「デプロイを管理」</b>→ 鉛筆アイコン → バージョン「新バージョン」→「デプロイ」。
+      URLは変わらず，再送信時の二重保存防止と保存確認が有効になります（「新しいデプロイ」だとURLが変わるので注意）。
+    </p>
   </div>
 </main>
 
@@ -409,6 +419,8 @@ body{
     </div>
     <div class="rec-status" id="recStatus">マイクを押して録音を開始</div>
     <div class="rec-timer" id="recTimer" hidden>00:00</div>
+    <!-- 未送信の録音があるときだけ表示（端末に保存済み・タップで再送信） -->
+    <button class="rec-pending" id="recPending" type="button" hidden></button>
   </div>
 </main>
 
@@ -813,6 +825,21 @@ function initRecorder(cfg){
   let segSamples=0, totalSamples=0, partNo=0, baseName='';
   let uploads=[];
   let startTime=0, timerId=null;
+  let lastFailed=false;     // 直前の録音が未送信 → 後から届いたら表示を更新する
+  let wake=null;            // 録音・送信中は画面を消さない（スリープで通信が切れるのを防ぐ）
+
+  // 送信トレイ：録音は端末に保存してから送り，届くまで自動で再送信する
+  const outbox=createOutbox({
+    onChange: renderPending,
+    onDrained: ()=>{ if(lastFailed && state==='idle'){ lastFailed=false; setStatus('✅ 未送信だった録音を送信しました','done'); } },
+    canRun: ()=>state==='idle',
+  });
+  $('recPending').addEventListener('click', ()=>outbox.flush(true));
+  outbox.start();
+
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='visible' && state!=='idle') keepAwake(true);
+  });
 
   mic.addEventListener('click', async ()=>{
     if(state==='idle'){ await startRec(); }
@@ -852,7 +879,11 @@ function initRecorder(cfg){
     let name;
     if(isFinal && partNo===0){ name=baseName; }
     else { partNo++; name=baseName+'_'+pad2(partNo); }
-    uploads.push(uploadMp3(cfg.u, blob, name, cfg.k));
+    const item={ uid:newUid(), endpoint:cfg.u, k:cfg.k||'', name, blob, at:Date.now() };
+    outbox.add(item);                              // 送る前に端末へ保存（失敗しても消えない）
+    uploads.push(outbox.send(item, 3, (n)=>{
+      if(state==='processing') setStatus('つながりにくいため送り直しています…（'+n+'回目）','busy');
+    }));
     if(!isFinal){ setStatus('パート'+partNo+'を送信中…（録音は継続中）','busy'); newEncoder(); }
   }
 
@@ -883,7 +914,7 @@ function initRecorder(cfg){
       try{
         const code="class P extends AudioWorkletProcessor{constructor(){super();this.b=[];this.n=0;}process(inp){const i=inp[0];if(i&&i[0]){const c=i[0];this.b.push(new Float32Array(c));this.n+=c.length;if(this.n>=2048){const o=new Float32Array(this.n);let k=0;for(const x of this.b){o.set(x,k);k+=x.length;}this.port.postMessage(o,[o.buffer]);this.b=[];this.n=0;}}return true;}}registerProcessor('cap',P);";
         const url=URL.createObjectURL(new Blob([code],{type:'application/javascript'}));
-        await audioCtx.audioWorklet.addModule(url);
+        try{ await audioCtx.audioWorklet.addModule(url); }finally{ URL.revokeObjectURL(url); }
         capNode=new AudioWorkletNode(audioCtx,'cap');
         capNode.port.onmessage=(e)=>pushPcm(e.data);
         usingWorklet=true;
@@ -898,6 +929,7 @@ function initRecorder(cfg){
 
     baseName=nameNow();                            // 開始時の名前を仮ロック（分割時に使用）
     state='recording';
+    keepAwake(true);
     mic.classList.add('recording');
     fxLayer.classList.add('fx-run');
     setStatus('録音中… もう一度押すと停止','busy');
@@ -916,18 +948,54 @@ function initRecorder(cfg){
       if(stream){ stream.getTracks().forEach(t=>t.stop()); }
       if(partNo===0){ baseName=nameNow(); }        // 分割なし→停止時の入力名を採用
       flushSegment(true);
-      await Promise.all(uploads);
-      if(audioCtx){ try{ await audioCtx.close(); }catch(e){} }
-      const tail=partNo>1?('（全'+partNo+'ファイル）'):'';
-      setStatus('✅ 送信しました！ありがとうございました'+tail,'done');
+      closeAudio();                                // 送信結果を待たずに解放（失敗時に残り続けないように）
+      const ok=(await Promise.all(uploads)).every(Boolean);
       timerEl.hidden=true;
-      $('recName').value='';
+      if(ok){
+        lastFailed=false;
+        const tail=partNo>1?('（全'+partNo+'ファイル）'):'';
+        setStatus('✅ 送信しました！ありがとうございました'+tail,'done');
+        $('recName').value='';
+      }else{
+        lastFailed=true;
+        setStatus('⚠ 回線が混み合っています。録音はこの端末に保存したので，つながり次第自動で送ります','err');
+      }
     }catch(err){
       console.error(err);
+      lastFailed=true;
       setStatus('⚠ 送信に失敗しました：'+(err.message||err),'err');
     }finally{
+      closeAudio();
       state='idle';
+      keepAwake(false);
+      renderPending();
     }
+  }
+
+  function closeAudio(){
+    if(!audioCtx) return;
+    try{ const p=audioCtx.close(); if(p&&p.catch) p.catch(()=>{}); }catch(e){}
+    audioCtx=null;
+  }
+
+  async function keepAwake(on){
+    try{
+      if(on){
+        if(!wake && navigator.wakeLock){
+          wake=await navigator.wakeLock.request('screen');
+          wake.addEventListener('release', ()=>{ wake=null; });
+        }
+      }else if(wake){ const w=wake; wake=null; await w.release(); }
+    }catch(e){ wake=null; }
+  }
+
+  // 未送信の録音があるときだけ，ステータスの下に小さく表示する
+  function renderPending(){
+    const b=$('recPending'), n=outbox.count;
+    b.hidden = n===0;
+    if(!n) return;
+    b.disabled = outbox.flushing;
+    b.textContent = outbox.flushing ? '📦 未送信 '+n+'件を送信中…' : '📦 未送信 '+n+'件 ・ タップで再送信';
   }
 
   function startTimer(){
@@ -951,24 +1019,169 @@ async function loadLame(){
   if(!window.lamejs) throw new Error('lamejs not loaded');
   return window.lamejs;
 }
-/* ---------- アップロード（Google Apps Script受け取り口へ） ----------
-   Apps Scriptの /exec は応答時に googleusercontent.com へ302リダイレクトするため，
-   通常のfetch(cors)ではレスポンスを読めず "Failed to fetch" になる。
-   no-cors で送信すると，レスポンスは読めないが保存自体は確実に行われる。 */
-async function uploadMp3(endpoint, mp3Blob, name, k){
-  const b64=await blobToBase64(mp3Blob);
-  const payload={ filename: sanitize(name)+'.mp3', mimeType:'audio/mpeg', data:b64 };
-  if(k) payload.k=k;
-  const body=JSON.stringify(payload);
-  await fetch(endpoint,{
-    method:'POST',
-    mode:'no-cors',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body,
-    redirect:'follow',
-  });
-  return { ok:true };
+/* ================================================================
+   送信トレイ
+   ・録音は送る前に端末（IndexedDB）へ保存し，届いたら消す
+   ・その場で数回再試行し，だめならバックグラウンドで間隔をあけて送り直す
+   ・ページを閉じても残り，次に共有URLを開いたとき自動で送り直す
+================================================================ */
+function createOutbox(hooks){
+  const items=new Map();   // uid → {uid,endpoint,k,name,blob,at, stale,fails,nextAt}
+  const busy=new Set();    // いま送信中のuid
+  let running=false;
+
+  async function start(){
+    for(const it of await idb.all()){
+      if(Date.now()-it.at > 30*864e5){ idb.del(it.uid); continue; }   // 30日より前のものは破棄
+      it.stale=true; it.fails=0; it.nextAt=Date.now()+2000+Math.random()*4000;
+      items.set(it.uid, it);
+    }
+    hooks.onChange();
+    setInterval(()=>flush(false), 5000);   // 送る時刻（nextAt）が来たものだけ送る
+    window.addEventListener('online', ()=>flush(true));
+  }
+  function add(item){ items.set(item.uid, item); idb.put(item); }
+  function done(uid){ items.delete(uid); idb.del(uid); hooks.onChange(); }
+
+  async function send(item, tries, onRetry){
+    busy.add(item.uid);
+    try{
+      const ok=await deliver(item, tries, onRetry);
+      if(ok){ done(item.uid); }
+      else{ item.stale=true; item.fails=(item.fails||0)+1; item.nextAt=Date.now()+backoff(item.fails); }
+      return ok;
+    }finally{ busy.delete(item.uid); hooks.onChange(); }
+  }
+
+  // 未送信分を1件ずつ順番に送る（同時に送って回線を詰まらせない）
+  async function flush(force){
+    if(running || !items.size) return;
+    if(!force && !hooks.canRun()) return;
+    running=true; hooks.onChange();
+    try{
+      for(const it of [...items.values()]){
+        if(!it.stale || busy.has(it.uid)) continue;
+        if(!force && it.nextAt>Date.now()) continue;
+        await send(it, 1);
+      }
+    }finally{
+      running=false; hooks.onChange();
+      if(![...items.values()].some(it=>it.stale)) hooks.onDrained();
+    }
+  }
+
+  return { start, add, send, flush,
+    get count(){ return [...items.values()].filter(it=>it.stale).length; },
+    get flushing(){ return running; } };
 }
+
+const RETRY_WAITS=[0,3,8];   // その場での再試行の間隔（秒）
+const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+const jitter=(ms)=>ms*(0.7+Math.random()*0.6);   // 班ごとにタイミングをずらす
+const backoff=(fails)=>jitter(Math.min(60000, 10000*Math.pow(2,fails-1)));   // 10秒→20秒→40秒→60秒…
+function newUid(){
+  return (crypto.randomUUID && crypto.randomUUID()) || (Date.now().toString(36)+Math.random().toString(36).slice(2,12));
+}
+
+/* 1件を最大 tries 回まで送る。届いた（または確認できない旧受け取り口で送れた）ら true */
+async function deliver(item, tries, onRetry){
+  const body=await buildBody(item);
+  for(let i=0;i<tries;i++){
+    if(i>0){ onRetry&&onRetry(i); await sleep(jitter(RETRY_WAITS[Math.min(i,RETRY_WAITS.length-1)]*1000)); }
+    else{ await sleep(Math.random()*1500); }      // 一斉に停止した班が同時に送らないよう少しずらす
+    // 前回「失敗」に見えても実は届いていることがある → 送り直す前に確認（二重保存を防ぐ）
+    if((i>0 || item.stale) && await confirmSaved(item)==='saved') return true;
+    try{ await postNoCors(item.endpoint, body, Math.min(300000, 45000+body.length/1e6*15000)); }
+    catch(e){ continue; }                          // 通信エラー → 次の試行へ
+    // 'none'＝受け取り口に届いていない。それ以外（保存済み・確認できない旧版）は送信完了とみなす
+    if(await confirmSaved(item)!=='none') return true;
+  }
+  return false;
+}
+
+async function buildBody(item){
+  const payload={ filename: sanitize(item.name)+'.mp3', mimeType:'audio/mpeg',
+                  data: await blobToBase64(item.blob), uid: item.uid };
+  if(item.k) payload.k=item.k;
+  return JSON.stringify(payload);
+}
+
+/* Apps Scriptの /exec は応答時に googleusercontent.com へ302リダイレクトするため，
+   通常のfetch(cors)ではレスポンスを読めず "Failed to fetch" になる。
+   no-cors で送り，保存できたかは下の confirmSaved で別途確かめる。 */
+async function postNoCors(endpoint, body, ms){
+  const ac=window.AbortController ? new AbortController() : null;
+  const t=ac && setTimeout(()=>ac.abort(), ms);
+  try{
+    await fetch(endpoint,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body,
+      redirect:'follow',
+      signal: ac ? ac.signal : undefined,
+    });
+  }finally{ if(t) clearTimeout(t); }
+}
+
+/* 保存されたかを受け取り口に問い合わせる。保存処理中なら終わるまで待つ。
+   'saved' | 'none'（届いていない） | 'unknown'（旧版の受け取り口・通信不可など） */
+async function confirmSaved(item){
+  for(let n=0;n<12;n++){
+    const s=await checkSaved(item.endpoint, item.uid);
+    if(s!=='pending') return s;
+    await sleep(5000);
+  }
+  return 'unknown';
+}
+
+/* JSONPで問い合わせる（Apps ScriptはCORSでレスポンスを読めないため） */
+const noCheckEndpoints=new Set();   // 確認に対応していない旧版の受け取り口
+function checkSaved(endpoint, uid){
+  if(noCheckEndpoints.has(endpoint)) return Promise.resolve('unknown');
+  return new Promise((resolve)=>{
+    const cb='_kw'+Math.random().toString(36).slice(2);
+    const s=document.createElement('script');
+    let fin=false;
+    const end=(v)=>{ if(fin) return; fin=true; clearTimeout(t); delete window[cb]; s.remove(); resolve(v); };
+    const t=setTimeout(()=>end('unknown'), 10000);
+    window[cb]=(d)=>{
+      const st=d&&d.state;
+      end(st==='saved'||st==='skipped' ? 'saved' : (st==='pending'||st==='none' ? st : 'unknown'));
+    };
+    s.onload=()=>{ if(!fin){ noCheckEndpoints.add(endpoint); end('unknown'); } };   // 旧版：スクリプトは読めたが応答なし
+    s.onerror=()=>end('unknown');
+    s.src=endpoint+(endpoint.indexOf('?')<0?'?':'&')+'check='+encodeURIComponent(uid)+'&callback='+cb+'&t='+Date.now();
+    document.head.appendChild(s);
+  });
+}
+
+/* 端末内の保存先（IndexedDB）。使えない環境では何もしない（送信自体は続ける） */
+const idb=(()=>{
+  let dbp=null;
+  function open(){
+    if(!dbp) dbp=new Promise((res,rej)=>{
+      const r=indexedDB.open('koewarp',1);
+      r.onupgradeneeded=()=>r.result.createObjectStore('outbox',{keyPath:'uid'});
+      r.onsuccess=()=>res(r.result);
+      r.onerror=()=>rej(r.error);
+    });
+    return dbp;
+  }
+  function run(mode, fn){
+    return open().then(db=>new Promise((res,rej)=>{
+      const tx=db.transaction('outbox', mode);
+      const req=fn(tx.objectStore('outbox'));
+      tx.oncomplete=()=>res(req.result);
+      tx.onerror=tx.onabort=()=>rej(tx.error);
+    }));
+  }
+  return {
+    put:(it)=>run('readwrite', s=>s.put({uid:it.uid, endpoint:it.endpoint, k:it.k, name:it.name, blob:it.blob, at:it.at})).catch(()=>{}),
+    del:(uid)=>run('readwrite', s=>s.delete(uid)).catch(()=>{}),
+    all:()=>run('readonly', s=>s.getAll()).then(a=>a||[]).catch(()=>[]),
+  };
+})();
 function blobToBase64(blob){
   return new Promise((resolve,reject)=>{
     const r=new FileReader();
@@ -990,9 +1203,12 @@ function extractFolderId(v){
   return '';
 }
 
-/* Apps Scriptに貼り付けるコード（__FOLDER_ID__ は自動置換） */
-const GAS_TEMPLATE = `/**
- * コエワ～プ 受け取り口（このコードをそのまま貼り付けてください）
+/* Apps Scriptに貼り付けるコード（__FOLDER_ID__ は自動置換）
+   String.raw：正規表現の \w などがそのまま貼り付けられるように */
+const GAS_TEMPLATE = String.raw`/**
+ * コエワ～プ 受け取り口 v2（このコードをそのまま貼り付けてください）
+ * ・同じ録音が再送信されても二重に保存しません
+ * ・アプリからの「保存できた？」の確認に応えます
  */
 var FOLDER_ID = '__FOLDER_ID__';
 
@@ -1014,34 +1230,64 @@ function doPost(e) {
       return json({ ok: true, disabled: !body.enabled });
     }
 
+    var cache = CacheService.getScriptCache();
+    var uid = /^[\w-]{8,64}$/.test(body.uid || '') ? 'u_' + body.uid : '';
+
     // オフにされた共有URLからの送信は保存しない
     var k = String(body.k || '');
     if (k) {
       var dis = JSON.parse(PropertiesService.getScriptProperties().getProperty('disabled') || '[]');
       if (dis.indexOf(k) >= 0) {
+        if (uid) cache.put(uid, 'skipped', 21600);
         return json({ ok: false, skipped: true, reason: 'disabled' });
       }
     }
 
-    var filename = (body.filename || 'コエワ～プ.mp3').toString();
-    var mimeType = body.mimeType || 'audio/mpeg';
-    var bytes = Utilities.base64Decode(body.data);
-    var blob = Utilities.newBlob(bytes, mimeType, filename);
+    // 重複チェックと日付フォルダの用意だけを短いロックの中で行う（保存そのものは並行して進む）
+    var lock = LockService.getScriptLock();
+    var locked = lock.tryLock(20000);
+    var folder;
+    try {
+      if (uid) {
+        if (cache.get(uid)) return json({ ok: true, duplicate: true });   // 保存済み／保存中の再送信
+        cache.put(uid, 'pending', 600);
+      }
+      folder = dayFolder();
+    } finally {
+      if (locked) lock.releaseLock();
+    }
 
-    // 保存先：記録先フォルダ内に「当日の日付(yyyyMMdd)」フォルダを自動作成
-    var parent = FOLDER_ID ? DriveApp.getFolderById(FOLDER_ID) : DriveApp.getRootFolder();
-    var dayName = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyyMMdd');
-    var it = parent.getFoldersByName(dayName);
-    var folder = it.hasNext() ? it.next() : parent.createFolder(dayName);
-
-    var file = folder.createFile(blob);
-    return json({ ok: true, id: file.getId(), name: file.getName(), url: file.getUrl() });
+    try {
+      var filename = (body.filename || 'コエワ～プ.mp3').toString();
+      var blob = Utilities.newBlob(Utilities.base64Decode(body.data), body.mimeType || 'audio/mpeg', filename);
+      var file = folder.createFile(blob);
+      if (uid) cache.put(uid, 'saved', 21600);
+      return json({ ok: true, id: file.getId(), name: file.getName() });
+    } catch (err) {
+      if (uid) cache.remove(uid);   // 保存に失敗したら，再送信を受け付ける
+      throw err;
+    }
   } catch (err) {
     return json({ ok: false, error: String(err) });
   }
 }
 
-function doGet() {
+// 記録先フォルダ内の「当日の日付(yyyyMMdd)」フォルダ（なければ作成）
+function dayFolder() {
+  var parent = FOLDER_ID ? DriveApp.getFolderById(FOLDER_ID) : DriveApp.getRootFolder();
+  var name = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyyMMdd');
+  var it = parent.getFoldersByName(name);
+  return it.hasNext() ? it.next() : parent.createFolder(name);
+}
+
+function doGet(e) {
+  var p = (e && e.parameter) || {};
+  // 保存確認（アプリが送り直すかどうかを判断するのに使う）
+  if (p.check && /^[A-Za-z_$][\w$]{0,40}$/.test(p.callback || '')) {
+    var v = /^[\w-]{8,64}$/.test(p.check) ? CacheService.getScriptCache().get('u_' + p.check) : null;
+    return ContentService.createTextOutput(p.callback + '(' + JSON.stringify({ v: 2, state: v || 'none' }) + ')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   return ContentService.createTextOutput('コエワ～プ 受け取り口は正常に動いています。')
     .setMimeType(ContentService.MimeType.TEXT);
 }

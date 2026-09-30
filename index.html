@@ -100,6 +100,10 @@
         <b>このページ上部の記録先欄</b>に貼り付け，共有URLを発行したら完了！
       </li>
     </ol>
+    <p class="sg-update">
+      <b>設置済みの方へ（受け取り口の更新）</b>：３のコードを貼り替えて保存 →「デプロイ」→<b>「デプロイを管理」</b>→ 鉛筆アイコン → バージョン「新バージョン」→「デプロイ」。
+      URLは変わらず，再送信時の二重保存防止と保存確認が有効になります（「新しいデプロイ」だとURLが変わるので注意）。
+    </p>
   </div>
 </main>
 
@@ -116,6 +120,8 @@
     </div>
     <div class="rec-status" id="recStatus">マイクを押して録音を開始</div>
     <div class="rec-timer" id="recTimer" hidden>00:00</div>
+    <!-- 未送信の録音があるときだけ表示（端末に保存済み・タップで再送信） -->
+    <button class="rec-pending" id="recPending" type="button" hidden></button>
   </div>
 </main>
 
